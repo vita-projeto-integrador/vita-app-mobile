@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Link, router } from 'expo-router';
+import { useState } from 'react';
+import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { styles } from './login.styles';
 
 export default function LoginScreen() {
@@ -16,7 +16,11 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>VITA</Text>
+          <Image
+            source={require('@/assets/images/logo-vita.png')}
+            style={{ width: 160, height: 60 }}
+            resizeMode="contain"
+          />
         </View>
 
         <Text style={styles.label}>Email</Text>

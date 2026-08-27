@@ -36,49 +36,61 @@
 
 
 import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Image } from 'react-native';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarShowLabel: false,
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('@/assets/images/icons/tab-home.png')}
+              style={{ width: 26, height: 26, opacity: focused ? 1 : 0.4 }}
+              resizeMode="contain"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="historico"
         options={{
-          title: 'Histórico',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="doc.text.fill" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('@/assets/images/icons/tab-historico.png')}
+              style={{ width: 26, height: 26, opacity: focused ? 1 : 0.4 }}
+              resizeMode="contain"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="mapa"
         options={{
-          title: 'Mapa',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="map.fill" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('@/assets/images/icons/tab-mapa.png')}
+              style={{ width: 26, height: 26, opacity: focused ? 1 : 0.4 }}
+              resizeMode="contain"
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="perfil"
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.fill" color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('@/assets/images/icons/tab-perfil.png')}
+              style={{ width: 26, height: 26, opacity: focused ? 1 : 0.4 }}
+              resizeMode="contain"
+            />
+          ),
         }}
       />
     </Tabs>
