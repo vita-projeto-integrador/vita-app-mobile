@@ -10,11 +10,11 @@ export default function RegisterScreen() {
     const [email, setEmail] = useState("");
 
     function handleAvancar(){
-        router.push("/(auth)/register2");
+        router.push("/(auth)/register");
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={[bottom]}>
+        <SafeAreaView style={styles.container} edges={["bottom"]}>
             <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
