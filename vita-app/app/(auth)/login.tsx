@@ -17,7 +17,7 @@ export default function LoginScreen() {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('@/assets/images/logo-vita.png')}
+            source={require('@/assets/images/logo-vita-orange.png')}
             style={{ width: 160, height: 60 }}
             resizeMode="contain"
           />
