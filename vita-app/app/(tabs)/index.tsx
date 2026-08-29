@@ -1,0 +1,83 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { styles } from './index.styles';
+
+const tarefasPendentes = [
+  { id: '1', texto: 'Aplicar defensivo agrícola', cor: '#E53935' },
+  { id: '2', texto: 'Aplicar defensivo agrícola', cor: '#F5A623' },
+  { id: '3', texto: 'Fazer análise por imagem', cor: '#43A047' },
+  { id: '4', texto: 'Fazer análise por imagem', cor: '#43A047' },
+];
+
+export default function HomeScreen() {
+  return (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <Text style={styles.greeting}>Olá, User!</Text>
+          <View style={styles.headerIcons}>
+            <Image
+              source={require('@/assets/images/icons/bell.png')}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+            <View style={styles.avatar}>
+              <Image
+                source={require('@/assets/images/icons/tab-perfil.png')}
+                style={{ width: 20, height: 20 }}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="O que precisa hoje?"
+            placeholderTextColor="#999999"
+          />
+          <Image
+            source={require('@/assets/images/icons/search-button.png')}
+            style={{ width: 28, height: 28 }}
+            resizeMode="contain"
+          />
+        </View>
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, styles.statCardLight]}>
+            <Text style={styles.statNumber}>12</Text>
+            <Text style={styles.statLabel}>Fotos analisadas hoje</Text>
+          </View>
+          <View style={[styles.statCard, styles.statCardDark]}>
+            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statLabel}>Nova confirmação de contaminação</Text>
+          </View>
+        </View>
+
+        <Text style={styles.metricsLink}>Ver mais métricas</Text>
+
+        <Text style={styles.sectionTitle}>Tarefas pendentes</Text>
+        {tarefasPendentes.map((tarefa) => (
+          <View key={tarefa.id} style={styles.taskRow}>
+            <View style={[styles.taskDot, { backgroundColor: tarefa.cor }]} />
+            <Text style={styles.taskText}>{tarefa.texto}</Text>
+            <TouchableOpacity style={styles.taskArrow}>
+              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]}>
+          <Text style={styles.actionButtonText}>Histórico de análises</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.actionButton, styles.actionButtonSecondary]}>
+          <Text style={styles.actionButtonText}>Mapa</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+}
