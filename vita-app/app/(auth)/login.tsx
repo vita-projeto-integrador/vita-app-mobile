@@ -1,15 +1,32 @@
+import { loginUser } from '@/src/services/authService';
+import { saveToken } from '@/src/storage/tokenStorage';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { styles } from './login.styles';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin() {
-    // TODO: validar credenciais / chamar API de autenticação
-    router.replace('/(tabs)');
+  async function handleLogin() {
+    if (!email || !senha) {
+      Alert.alert('Atenção', 'Preencha email e senha.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await loginUser({ email, password: senha });
+      await saveToken(response.data.token);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Não foi possível fazer login.';
+      Alert.alert('Erro', message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -40,8 +57,14 @@ export default function LoginScreen() {
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Acessar conta</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Entrando...' : 'Acessar conta'}
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
