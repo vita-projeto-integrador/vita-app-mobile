@@ -31,18 +31,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="O que precisa hoje?"
-            placeholderTextColor="#999999"
-          />
-          <Image
-            source={require('@/assets/images/icons/search-button.png')}
-            style={{ width: 28, height: 28 }}
-            resizeMode="contain"
-          />
-        </View>
+      <View style={styles.searchBar}>
+  <TextInput
+    style={styles.searchInput}
+    placeholder="O que precisa hoje?"
+    placeholderTextColor="#999999"
+  />
+  <TouchableOpacity style={styles.searchIconCircle}>
+    <Image
+      source={require('@/assets/images/icons/search-button.png')}
+      style={{ width: 14, height: 14 }}
+      resizeMode="contain"
+    />
+  </TouchableOpacity>
+</View>
       </View>
 
       <View style={styles.content}>
@@ -61,14 +63,14 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Tarefas pendentes</Text>
         {tarefasPendentes.map((tarefa) => (
-          <View key={tarefa.id} style={styles.taskRow}>
-            <View style={[styles.taskDot, { backgroundColor: tarefa.cor }]} />
-            <Text style={styles.taskText}>{tarefa.texto}</Text>
-            <TouchableOpacity style={styles.taskArrow}>
-              <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        ))}
+  <TouchableOpacity key={tarefa.id} style={styles.taskRow} activeOpacity={0.7}>
+    <View style={[styles.taskDot, { backgroundColor: tarefa.cor }]} />
+    <Text style={styles.taskText}>{tarefa.texto}</Text>
+    <View style={styles.taskArrow}>
+      <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+    </View>
+  </TouchableOpacity>
+))}
 
         <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]}>
           <Text style={styles.actionButtonText}>Histórico de análises</Text>

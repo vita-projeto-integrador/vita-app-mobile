@@ -8,10 +8,10 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 100,
-  },
+  flexGrow: 1,
+  paddingHorizontal: 32,   
+  paddingTop: 100,
+},
   header: {
     alignItems: "center",
     marginBottom: 32,
