@@ -1,5 +1,15 @@
 import { registerUser } from "@/src/services/authService";
 import { saveToken, saveUser } from "@/src/storage/tokenStorage";
+import {
+  isValidEmail,
+  isValidDate,
+  isValidCNPJ,
+  isValidPhone,
+  formatPhone,
+  formatCNPJ,
+  formatDate,
+  toISODate,
+} from "@/src/validation/authSchemas";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -19,80 +29,17 @@ type AccessType = "produtor" | "estudante";
 
 const TOTAL_STEPS = 3;
 
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
-function isValidDate(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length !== 8) return false;
-  const day = Number(digits.slice(0, 2));
-  const month = Number(digits.slice(2, 4));
-  const year = Number(digits.slice(4, 8));
-  if (month < 1 || month > 12) return false;
-  if (year < 1900 || year > new Date().getFullYear()) return false;
-  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return day >= 1 && day <= daysInMonth;
-}
-
-function isValidCNPJ(value: string) {
-  const digitsOnly = value.replace(/\D/g, "");
-  return digitsOnly.length === 14;
-}
-
-function isValidPhone(value: string) {
-  const digitsOnly = value.replace(/\D/g, "");
-  return digitsOnly.length === 10 || digitsOnly.length === 11;
-}
-
-function formatPhone(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) {
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  }
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
-
-function formatCNPJ(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 14);
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2");
-}
-
-function formatDate(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-function toISODate(displayValue: string) {
-  const digits = displayValue.replace(/\D/g, "");
-  const day = digits.slice(0, 2);
-  const month = digits.slice(2, 4);
-  const year = digits.slice(4, 8);
-  return `${year}-${month}-${day}`;
-}
-
 export default function RegisterScreen() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // Etapa 1
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
 
-  // Etapa 2
   const [senha, setSenha] = useState("");
   const [accessType, setAccessType] = useState<AccessType | null>(null);
 
-  // Etapa 3
   const [telefone, setTelefone] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [endereco, setEndereco] = useState("");
@@ -103,21 +50,21 @@ export default function RegisterScreen() {
   function handleAvancar() {
     if (step === 1) {
       if (!nome || !email) {
-        Alert.alert("Atenção", "Preencha nome e email.");
+        Alert.alert("Atencao", "Preencha nome e email.");
         return;
       }
       if (!isValidEmail(email)) {
-        Alert.alert("Atenção", "Digite um email válido.");
+        Alert.alert("Atencao", "Digite um email valido.");
         return;
       }
     }
     if (step === 2) {
       if (!senha || !accessType) {
-        Alert.alert("Atenção", "Preencha a senha e escolha o tipo de acesso.");
+        Alert.alert("Atencao", "Preencha a senha e escolha o tipo de acesso.");
         return;
       }
       if (senha.length < 6) {
-        Alert.alert("Atenção", "A senha deve ter pelo menos 6 caracteres.");
+        Alert.alert("Atencao", "A senha deve ter pelo menos 6 caracteres.");
         return;
       }
     }
@@ -130,18 +77,15 @@ export default function RegisterScreen() {
 
   function validateStep3() {
     if (telefone && !isValidPhone(telefone)) {
-      Alert.alert(
-        "Atenção",
-        "Telefone inválido. Digite DDD + número (10 ou 11 dígitos).",
-      );
+      Alert.alert("Atencao", "Telefone invalido. Digite DDD + numero.");
       return false;
     }
     if (dataNascimento && !isValidDate(dataNascimento)) {
-      Alert.alert("Atenção", "Data de nascimento inválida.");
+      Alert.alert("Atencao", "Data de nascimento invalida.");
       return false;
     }
     if (accessType === "produtor" && cnpj && !isValidCNPJ(cnpj)) {
-      Alert.alert("Atenção", "CNPJ inválido. Digite os 14 números.");
+      Alert.alert("Atencao", "CNPJ invalido. Digite os 14 numeros.");
       return false;
     }
     return true;
@@ -175,7 +119,7 @@ export default function RegisterScreen() {
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||
-        "Não foi possível concluir o cadastro.";
+        "Nao foi possivel concluir o cadastro.";
       Alert.alert("Erro", message);
     } finally {
       setLoading(false);
@@ -192,7 +136,7 @@ export default function RegisterScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>Começar gratuitamente</Text>
+            <Text style={styles.title}>Comecar gratuitamente</Text>
             <Text style={styles.subtitle}>
               Crie uma conta <Text style={styles.brand}>Vita</Text>
             </Text>
@@ -294,7 +238,7 @@ export default function RegisterScreen() {
                   maxLength={10}
                 />
 
-                <Text style={styles.label}>Endereço</Text>
+                <Text style={styles.label}>Endereco</Text>
                 <TextInput
                   style={styles.input}
                   value={endereco}
@@ -346,7 +290,7 @@ export default function RegisterScreen() {
 
               {step < TOTAL_STEPS ? (
                 <TouchableOpacity style={styles.button} onPress={handleAvancar}>
-                  <Text style={styles.buttonText}>Avançar</Text>
+                  <Text style={styles.buttonText}>Avancar</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
@@ -371,7 +315,7 @@ export default function RegisterScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Já possui uma conta?{" "}
+            Ja possui uma conta?{" "}
             <Text
               style={styles.footerLink}
               onPress={() => router.push("/(auth)/login")}
