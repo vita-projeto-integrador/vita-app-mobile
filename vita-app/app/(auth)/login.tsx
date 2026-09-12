@@ -1,5 +1,5 @@
 import { loginUser } from "@/src/services/authService";
-import { saveToken, saveUser } from "@/src/storage/tokenStorage";
+import { useAuth } from "@/src/hooks/useAuth";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import {
@@ -13,6 +13,7 @@ import {
 import { styles } from "./login.styles";
 
 export default function LoginScreen() {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,8 +27,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await loginUser({ email, password: senha });
-      await saveToken(response.data.token);
-      await saveUser(response.data.user);
+      await signIn(response.data.token, response.data.user);
       router.replace("/(tabs)");
     } catch (error: any) {
       const message =

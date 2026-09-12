@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -8,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { getUser } from "@/src/storage/tokenStorage";
+import { useAuth } from "@/src/hooks/useAuth";
 import { styles } from "./index.styles";
 
 const tarefasPendentes = [
@@ -19,18 +18,8 @@ const tarefasPendentes = [
 ];
 
 export default function HomeScreen() {
-  const [userName, setUserName] = useState("User");
-
-  useEffect(() => {
-    async function loadUser() {
-      const user = await getUser();
-      if (user?.name) {
-        const primeiroNome = user.name.split(" ")[0];
-        setUserName(primeiroNome);
-      }
-    }
-    loadUser();
-  }, []);
+  const { user } = useAuth();
+  const userName = user?.name ? user.name.split(" ")[0] : "User";
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

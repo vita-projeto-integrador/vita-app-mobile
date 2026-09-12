@@ -1,5 +1,5 @@
 import { registerUser } from "@/src/services/authService";
-import { saveToken, saveUser } from "@/src/storage/tokenStorage";
+import { useAuth } from "@/src/hooks/useAuth";
 import {
   isValidEmail,
   isValidDate,
@@ -31,6 +31,7 @@ const TOTAL_STEPS = 3;
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { signIn } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -113,8 +114,7 @@ export default function RegisterScreen() {
         course: accessType === "estudante" ? curso || undefined : undefined,
       });
 
-      await saveToken(response.data.token);
-      await saveUser(response.data.user);
+      await signIn(response.data.token, response.data.user);
       router.replace("/(tabs)");
     } catch (error: any) {
       const message =
