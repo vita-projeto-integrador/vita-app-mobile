@@ -1,8 +1,17 @@
 import { registerUser } from "@/src/services/authService";
-import { saveToken } from "@/src/storage/tokenStorage";
+import { saveToken, saveUser } from "@/src/storage/tokenStorage";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "./register.styles";
 
@@ -15,14 +24,15 @@ function isValidEmail(value: string) {
 }
 
 function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(value);
-  const [year, month, day] = value.split("-").map(Number);
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() + 1 === month &&
-    date.getDate() === day
-  );
+  const digits = value.replace(/\D/g, "");
+  if (digits.length !== 8) return false;
+  const day = Number(digits.slice(0, 2));
+  const month = Number(digits.slice(2, 4));
+  const year = Number(digits.slice(4, 8));
+  if (month < 1 || month > 12) return false;
+  if (year < 1900 || year > new Date().getFullYear()) return false;
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return day >= 1 && day <= daysInMonth;
 }
 
 function isValidCNPJ(value: string) {
@@ -33,6 +43,40 @@ function isValidCNPJ(value: string) {
 function isValidPhone(value: string) {
   const digitsOnly = value.replace(/\D/g, "");
   return digitsOnly.length === 10 || digitsOnly.length === 11;
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function formatCNPJ(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function formatDate(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function toISODate(displayValue: string) {
+  const digits = displayValue.replace(/\D/g, "");
+  const day = digits.slice(0, 2);
+  const month = digits.slice(2, 4);
+  const year = digits.slice(4, 8);
+  return `${year}-${month}-${day}`;
 }
 
 export default function RegisterScreen() {
@@ -86,15 +130,18 @@ export default function RegisterScreen() {
 
   function validateStep3() {
     if (telefone && !isValidPhone(telefone)) {
-      Alert.alert("Atenção", "Telefone inválido. Digite DDD + número (10 ou 11 dígitos).");
+      Alert.alert(
+        "Atenção",
+        "Telefone inválido. Digite DDD + número (10 ou 11 dígitos).",
+      );
       return false;
     }
     if (dataNascimento && !isValidDate(dataNascimento)) {
-      Alert.alert("Atenção", "Data de nascimento inválida. Use o formato AAAA-MM-DD.");
+      Alert.alert("Atenção", "Data de nascimento inválida.");
       return false;
     }
     if (accessType === "produtor" && cnpj && !isValidCNPJ(cnpj)) {
-      Alert.alert("Atenção", "CNPJ inválido. Digite os 14 números, sem letras.");
+      Alert.alert("Atenção", "CNPJ inválido. Digite os 14 números.");
       return false;
     }
     return true;
@@ -109,19 +156,26 @@ export default function RegisterScreen() {
         name: nome,
         email,
         password: senha,
-        phone: telefone || undefined,
-        birthDate: dataNascimento || undefined,
+        phone: telefone ? telefone.replace(/\D/g, "") : undefined,
+        birthDate: dataNascimento ? toISODate(dataNascimento) : undefined,
         accessType: accessType!,
         address: endereco || undefined,
-        cnpj: accessType === "produtor" ? cnpj || undefined : undefined,
-        highSchool: accessType === "estudante" ? escola || undefined : undefined,
+        cnpj:
+          accessType === "produtor" && cnpj
+            ? cnpj.replace(/\D/g, "")
+            : undefined,
+        highSchool:
+          accessType === "estudante" ? escola || undefined : undefined,
         course: accessType === "estudante" ? curso || undefined : undefined,
       });
 
       await saveToken(response.data.token);
+      await saveUser(response.data.user);
       router.replace("/(tabs)");
     } catch (error: any) {
-      const message = error?.response?.data?.message || "Não foi possível concluir o cadastro.";
+      const message =
+        error?.response?.data?.message ||
+        "Não foi possível concluir o cadastro.";
       Alert.alert("Erro", message);
     } finally {
       setLoading(false);
@@ -189,7 +243,8 @@ export default function RegisterScreen() {
                     <Text
                       style={[
                         styles.optionButtonText,
-                        accessType === "produtor" && styles.optionButtonTextSelected,
+                        accessType === "produtor" &&
+                          styles.optionButtonTextSelected,
                       ]}
                     >
                       Produtor
@@ -206,7 +261,8 @@ export default function RegisterScreen() {
                     <Text
                       style={[
                         styles.optionButtonText,
-                        accessType === "estudante" && styles.optionButtonTextSelected,
+                        accessType === "estudante" &&
+                          styles.optionButtonTextSelected,
                       ]}
                     >
                       Estudante
@@ -222,17 +278,20 @@ export default function RegisterScreen() {
                 <TextInput
                   style={styles.input}
                   value={telefone}
-                  onChangeText={setTelefone}
+                  onChangeText={(text) => setTelefone(formatPhone(text))}
                   keyboardType="phone-pad"
-                  placeholder="11999990000"
+                  placeholder="(11) 99999-0000"
+                  maxLength={15}
                 />
 
-                <Text style={styles.label}>Data de nascimento (AAAA-MM-DD)</Text>
+                <Text style={styles.label}>Data de nascimento</Text>
                 <TextInput
                   style={styles.input}
                   value={dataNascimento}
-                  onChangeText={setDataNascimento}
-                  placeholder="2000-01-01"
+                  onChangeText={(text) => setDataNascimento(formatDate(text))}
+                  keyboardType="numeric"
+                  placeholder="04/05/2004"
+                  maxLength={10}
                 />
 
                 <Text style={styles.label}>Endereço</Text>
@@ -248,9 +307,10 @@ export default function RegisterScreen() {
                     <TextInput
                       style={styles.input}
                       value={cnpj}
-                      onChangeText={setCnpj}
+                      onChangeText={(text) => setCnpj(formatCNPJ(text))}
                       keyboardType="numeric"
-                      placeholder="00000000000000"
+                      placeholder="00.000.000/0000-00"
+                      maxLength={18}
                     />
                   </>
                 )}
@@ -303,7 +363,9 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            <View
+              style={[styles.progressFill, { width: `${progress * 100}%` }]}
+            />
           </View>
         </ScrollView>
 
