@@ -2,6 +2,7 @@ import { loginUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
 import { Link, router } from "expo-router";
 import { useState } from "react";
+import { FormInput } from "@/src/components/FormInput";
 import {
   Alert,
   Image,
@@ -48,19 +49,20 @@ export default function LoginScreen() {
             resizeMode="contain"
           />
         </View>
-
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
+        <FormInput
+          label="Email"
+          labelStyle={styles.label}
+          inputStyle={styles.input}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
         />
 
-        <Text style={styles.label}>Senha</Text>
-        <TextInput
-          style={styles.input}
+        <FormInput
+          label="Senha"
+          labelStyle={styles.label}
+          inputStyle={styles.input}
           value={senha}
           onChangeText={setSenha}
           secureTextEntry

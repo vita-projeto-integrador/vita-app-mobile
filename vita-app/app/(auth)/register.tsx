@@ -1,5 +1,6 @@
 import { registerUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
+import { FormInput } from "@/src/components/FormInput";
 import {
   isValidEmail,
   isValidDate,
@@ -145,17 +146,19 @@ export default function RegisterScreen() {
           <View style={styles.form}>
             {step === 1 && (
               <>
-                <Text style={styles.label}>Nome completo</Text>
-                <TextInput
-                  style={styles.input}
+                <FormInput
+                  label="Nome completo"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
                   value={nome}
                   onChangeText={setNome}
                   autoCapitalize="words"
                 />
 
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
+                <FormInput
+                  label="Email"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -166,9 +169,10 @@ export default function RegisterScreen() {
 
             {step === 2 && (
               <>
-                <Text style={styles.label}>Senha</Text>
-                <TextInput
-                  style={styles.input}
+                <FormInput
+                  label="Senha"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
                   value={senha}
                   onChangeText={setSenha}
                   secureTextEntry
@@ -218,9 +222,10 @@ export default function RegisterScreen() {
 
             {step === 3 && (
               <>
-                <Text style={styles.label}>Telefone</Text>
-                <TextInput
-                  style={styles.input}
+                <FormInput
+                  label="Telefone"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
                   value={telefone}
                   onChangeText={(text) => setTelefone(formatPhone(text))}
                   keyboardType="phone-pad"
@@ -228,9 +233,10 @@ export default function RegisterScreen() {
                   maxLength={15}
                 />
 
-                <Text style={styles.label}>Data de nascimento</Text>
-                <TextInput
-                  style={styles.input}
+                <FormInput
+                  label="Data de nascimento"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
                   value={dataNascimento}
                   onChangeText={(text) => setDataNascimento(formatDate(text))}
                   keyboardType="numeric"
@@ -238,39 +244,41 @@ export default function RegisterScreen() {
                   maxLength={10}
                 />
 
-                <Text style={styles.label}>Endereco</Text>
-                <TextInput
-                  style={styles.input}
+                <FormInput
+                  label="Endereco"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
                   value={endereco}
                   onChangeText={setEndereco}
                 />
 
                 {accessType === "produtor" && (
-                  <>
-                    <Text style={styles.label}>CNPJ</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={cnpj}
-                      onChangeText={(text) => setCnpj(formatCNPJ(text))}
-                      keyboardType="numeric"
-                      placeholder="00.000.000/0000-00"
-                      maxLength={18}
-                    />
-                  </>
+                  <FormInput
+                    label="CNPJ"
+                    labelStyle={styles.label}
+                    inputStyle={styles.input}
+                    value={cnpj}
+                    onChangeText={(text) => setCnpj(formatCNPJ(text))}
+                    keyboardType="numeric"
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                  />
                 )}
 
                 {accessType === "estudante" && (
                   <>
-                    <Text style={styles.label}>Escola</Text>
-                    <TextInput
-                      style={styles.input}
+                    <FormInput
+                      label="Escola"
+                      labelStyle={styles.label}
+                      inputStyle={styles.input}
                       value={escola}
                       onChangeText={setEscola}
                     />
 
-                    <Text style={styles.label}>Curso</Text>
-                    <TextInput
-                      style={styles.input}
+                    <FormInput
+                      label="Curso"
+                      labelStyle={styles.label}
+                      inputStyle={styles.input}
                       value={curso}
                       onChangeText={setCurso}
                     />
