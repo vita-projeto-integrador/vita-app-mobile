@@ -5,11 +5,11 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
+ content: {
+  flex: 1,
+  paddingHorizontal: 32,  
+  justifyContent: 'center',
+},
   logoContainer: {
     alignItems: 'center',
     marginBottom: 48,

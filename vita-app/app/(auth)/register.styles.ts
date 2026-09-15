@@ -8,10 +8,10 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 100,
-  },
+  flexGrow: 1,
+  paddingHorizontal: 32,   
+  paddingTop: 100,
+},
   header: {
     alignItems: "center",
     marginBottom: 32,
@@ -84,5 +84,42 @@ export const styles = StyleSheet.create({
   footerLink: {
     color: ORANGE,
     fontWeight: "600",
+  },
+    optionsRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 20,
+  },
+  optionButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#D9D9D9",
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  optionButtonSelected: {
+    borderColor: ORANGE,
+    backgroundColor: "#FFF4E6",
+  },
+  optionButtonText: {
+    fontSize: 14,
+    color: "#1A1A1A",
+  },
+  optionButtonTextSelected: {
+    color: ORANGE,
+    fontWeight: "600",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  backButtonText: {
+    color: "#6B6B6B",
+    fontSize: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
 });
