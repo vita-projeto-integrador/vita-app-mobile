@@ -25,6 +25,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "./register.styles";
+import { ConfirmModal } from "@/src/components/ConfirmModal";
 
 type AccessType = "produtor" | "estudante";
 
@@ -34,12 +35,14 @@ export default function RegisterScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
   const [step, setStep] = useState(1);
+  const [showEmailExistsModal, setShowEmailExistsModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
 
   const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
   const [accessType, setAccessType] = useState<AccessType | null>(null);
 
   const [telefone, setTelefone] = useState("");
@@ -61,12 +64,19 @@ export default function RegisterScreen() {
       }
     }
     if (step === 2) {
-      if (!senha || !accessType) {
-        Alert.alert("Atencao", "Preencha a senha e escolha o tipo de acesso.");
+      if (!senha || !confirmarSenha || !accessType) {
+        Alert.alert(
+          "Atencao",
+          "Preencha a senha, confirmacao e escolha o tipo de acesso.",
+        );
         return;
       }
       if (senha.length < 6) {
         Alert.alert("Atencao", "A senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+      if (senha !== confirmarSenha) {
+        Alert.alert("Atencao", "As senhas nao coincidem.");
         return;
       }
     }
@@ -121,7 +131,12 @@ export default function RegisterScreen() {
       const message =
         error?.response?.data?.message ||
         "Nao foi possivel concluir o cadastro.";
-      Alert.alert("Erro", message);
+
+      if (message.includes("Já existe uma conta")) {
+        setShowEmailExistsModal(true);
+      } else {
+        Alert.alert("Erro", message);
+      }
     } finally {
       setLoading(false);
     }
@@ -175,6 +190,15 @@ export default function RegisterScreen() {
                   inputStyle={styles.input}
                   value={senha}
                   onChangeText={setSenha}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+                <FormInput
+                  label="Confirmar senha"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
                   secureTextEntry
                   autoCapitalize="none"
                 />
@@ -240,7 +264,7 @@ export default function RegisterScreen() {
                   value={dataNascimento}
                   onChangeText={(text) => setDataNascimento(formatDate(text))}
                   keyboardType="numeric"
-                  placeholder="04/05/2004"
+                  placeholder="00/00/0000"
                   maxLength={10}
                 />
 
@@ -333,6 +357,18 @@ export default function RegisterScreen() {
           </Text>
         </View>
       </KeyboardAvoidingView>
+      <ConfirmModal
+        visible={showEmailExistsModal}
+        title="Email ja cadastrado"
+        message="Ja existe uma conta com esse email. Deseja ir para a tela de login?"
+        confirmText="Ir para Login"
+        cancelText="Cancelar"
+        onConfirm={() => {
+          setShowEmailExistsModal(false);
+          router.push("/(auth)/login");
+        }}
+        onCancel={() => setShowEmailExistsModal(false)}
+      />
     </SafeAreaView>
   );
 }
