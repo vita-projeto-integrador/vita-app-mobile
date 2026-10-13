@@ -6,6 +6,10 @@ import {
   isValidDate,
   isValidCNPJ,
   isValidPhone,
+  isValidName,
+  isValidAddress,
+  isValidSchoolOrCourse,
+  getPasswordError,
   formatPhone,
   formatCNPJ,
   formatDate,
@@ -62,6 +66,13 @@ export default function RegisterScreen() {
         Alert.alert("Atencao", "Digite um email valido.");
         return;
       }
+            if (!isValidName(nome)) {
+        Alert.alert(
+          "Atencao",
+          "Nome invalido. Use apenas letras, ate 100 caracteres.",
+        );
+        return;
+      }
     }
     if (step === 2) {
       if (!senha || !confirmarSenha || !accessType) {
@@ -71,8 +82,9 @@ export default function RegisterScreen() {
         );
         return;
       }
-      if (senha.length < 6) {
-        Alert.alert("Atencao", "A senha deve ter pelo menos 6 caracteres.");
+                 const passwordError = getPasswordError(senha);
+      if (passwordError) {
+        Alert.alert("Atencao", passwordError);
         return;
       }
       if (senha !== confirmarSenha) {
@@ -98,6 +110,21 @@ export default function RegisterScreen() {
     }
     if (accessType === "produtor" && cnpj && !isValidCNPJ(cnpj)) {
       Alert.alert("Atencao", "CNPJ invalido. Digite os 14 numeros.");
+      return false;
+    }
+        if (endereco && !isValidAddress(endereco)) {
+      Alert.alert(
+        "Atencao",
+        "Endereco invalido. Use apenas letras, numeros e espacos.",
+      );
+      return false;
+    }
+    if (accessType === "estudante" && escola && !isValidSchoolOrCourse(escola)) {
+      Alert.alert("Atencao", "Escola invalida. Use apenas letras.");
+      return false;
+    }
+    if (accessType === "estudante" && curso && !isValidSchoolOrCourse(curso)) {
+      Alert.alert("Atencao", "Curso invalido. Use apenas letras.");
       return false;
     }
     return true;
