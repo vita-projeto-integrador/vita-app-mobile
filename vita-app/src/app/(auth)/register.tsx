@@ -66,7 +66,7 @@ export default function RegisterScreen() {
         Alert.alert("Atencao", "Digite um email valido.");
         return;
       }
-            if (!isValidName(nome)) {
+      if (!isValidName(nome)) {
         Alert.alert(
           "Atencao",
           "Nome invalido. Use apenas letras, ate 100 caracteres.",
@@ -82,7 +82,7 @@ export default function RegisterScreen() {
         );
         return;
       }
-                 const passwordError = getPasswordError(senha);
+      const passwordError = getPasswordError(senha);
       if (passwordError) {
         Alert.alert("Atencao", passwordError);
         return;
@@ -112,14 +112,18 @@ export default function RegisterScreen() {
       Alert.alert("Atencao", "CNPJ invalido. Digite os 14 numeros.");
       return false;
     }
-        if (endereco && !isValidAddress(endereco)) {
+    if (endereco && !isValidAddress(endereco)) {
       Alert.alert(
         "Atencao",
         "Endereco invalido. Use apenas letras, numeros e espacos.",
       );
       return false;
     }
-    if (accessType === "estudante" && escola && !isValidSchoolOrCourse(escola)) {
+    if (
+      accessType === "estudante" &&
+      escola &&
+      !isValidSchoolOrCourse(escola)
+    ) {
       Alert.alert("Atencao", "Escola invalida. Use apenas letras.");
       return false;
     }
@@ -137,7 +141,7 @@ export default function RegisterScreen() {
     try {
       const response = await registerUser({
         name: nome,
-        email,
+        email: email.trim(),
         password: senha,
         phone: telefone ? telefone.replace(/\D/g, "") : undefined,
         birthDate: dataNascimento ? toISODate(dataNascimento) : undefined,
