@@ -5,13 +5,14 @@ import {
   View,
   TextStyle,
   ViewStyle,
+  StyleProp,
 } from "react-native";
 
 interface FormInputProps extends TextInputProps {
   label: string;
-  labelStyle?: TextStyle;
-  inputStyle?: TextStyle | ViewStyle;
-  containerStyle?: ViewStyle;
+  labelStyle?: StyleProp<TextStyle>;
+  inputStyle?: StyleProp<TextStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export function FormInput({
