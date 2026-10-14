@@ -1,6 +1,6 @@
 import { loginUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
-import { isValidEmail } from "@/src/validation/authSchemas";
+import { loginSchema } from "@/src/validation/schemas";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { FormInput } from "@/src/components/FormInput";
@@ -21,21 +21,15 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email || !senha) {
-      Alert.alert("Atenção", "Preencha email e senha.");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      Alert.alert("Atenção", "Digite um email válido.");
+    const result = loginSchema.safeParse({ email, password: senha });
+    if (!result.success) {
+      Alert.alert("Atenção", result.error.issues[0].message);
       return;
     }
 
     setLoading(true);
     try {
-      const response = await loginUser({
-        email: email.trim(),
-        password: senha,
-      });
+      const response = await loginUser(result.data);
       await signIn(response.data.token, response.data.user);
       router.replace("/(tabs)");
     } catch (error: any) {
