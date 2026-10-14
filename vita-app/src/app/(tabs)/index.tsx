@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "@/src/hooks/useAuth";
-import { styles } from "./index.styles";
+import { styles } from "@/src/styles/home.styles";
 
 const tarefasPendentes = [
   { id: "1", texto: "Aplicar defensivo agrícola", cor: "#E53935" },

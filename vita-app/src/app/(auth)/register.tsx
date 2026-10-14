@@ -25,7 +25,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { styles } from "./register.styles";
+import { styles } from "@/src/styles/register.styles";
 import { ConfirmModal } from "@/src/components/ConfirmModal";
 
 type AccessType = "produtor" | "estudante";

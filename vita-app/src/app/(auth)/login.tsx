@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { styles } from "./login.styles";
+import { styles } from "@/src/styles/login.styles";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
