@@ -2,19 +2,16 @@ import { registerUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
 import { FormInput } from "@/src/components/FormInput";
 import {
-  isValidEmail,
-  isValidDate,
-  isValidCNPJ,
-  isValidPhone,
-  isValidName,
-  isValidAddress,
-  isValidSchoolOrCourse,
-  getPasswordError,
   formatPhone,
   formatCNPJ,
   formatDate,
   toISODate,
 } from "@/src/validation/authSchemas";
+import {
+  registerStep1Schema,
+  registerStep2Schema,
+  registerStep3Schema,
+} from "@/src/validation/schemas";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -58,37 +55,20 @@ export default function RegisterScreen() {
 
   function handleAvancar() {
     if (step === 1) {
-      if (!nome || !email) {
-        Alert.alert("Atencao", "Preencha nome e email.");
-        return;
-      }
-      if (!isValidEmail(email)) {
-        Alert.alert("Atencao", "Digite um email valido.");
-        return;
-      }
-      if (!isValidName(nome)) {
-        Alert.alert(
-          "Atencao",
-          "Nome invalido. Use apenas letras, ate 100 caracteres.",
-        );
+      const result = registerStep1Schema.safeParse({ nome, email });
+      if (!result.success) {
+        Alert.alert("Atencao", result.error.issues[0].message);
         return;
       }
     }
     if (step === 2) {
-      if (!senha || !confirmarSenha || !accessType) {
-        Alert.alert(
-          "Atencao",
-          "Preencha a senha, confirmacao e escolha o tipo de acesso.",
-        );
-        return;
-      }
-      const passwordError = getPasswordError(senha);
-      if (passwordError) {
-        Alert.alert("Atencao", passwordError);
-        return;
-      }
-      if (senha !== confirmarSenha) {
-        Alert.alert("Atencao", "As senhas nao coincidem.");
+      const result = registerStep2Schema.safeParse({
+        senha,
+        confirmarSenha,
+        accessType,
+      });
+      if (!result.success) {
+        Alert.alert("Atencao", result.error.issues[0].message);
         return;
       }
     }
@@ -100,35 +80,16 @@ export default function RegisterScreen() {
   }
 
   function validateStep3() {
-    if (telefone && !isValidPhone(telefone)) {
-      Alert.alert("Atencao", "Telefone invalido. Digite DDD + numero.");
-      return false;
-    }
-    if (dataNascimento && !isValidDate(dataNascimento)) {
-      Alert.alert("Atencao", "Data de nascimento invalida.");
-      return false;
-    }
-    if (accessType === "produtor" && cnpj && !isValidCNPJ(cnpj)) {
-      Alert.alert("Atencao", "CNPJ invalido. Digite os 14 numeros.");
-      return false;
-    }
-    if (endereco && !isValidAddress(endereco)) {
-      Alert.alert(
-        "Atencao",
-        "Endereco invalido. Use apenas letras, numeros e espacos.",
-      );
-      return false;
-    }
-    if (
-      accessType === "estudante" &&
-      escola &&
-      !isValidSchoolOrCourse(escola)
-    ) {
-      Alert.alert("Atencao", "Escola invalida. Use apenas letras.");
-      return false;
-    }
-    if (accessType === "estudante" && curso && !isValidSchoolOrCourse(curso)) {
-      Alert.alert("Atencao", "Curso invalido. Use apenas letras.");
+    const result = registerStep3Schema.safeParse({
+      telefone,
+      dataNascimento,
+      endereco,
+      cnpj: accessType === "produtor" ? cnpj : "",
+      escola: accessType === "estudante" ? escola : "",
+      curso: accessType === "estudante" ? curso : "",
+    });
+    if (!result.success) {
+      Alert.alert("Atencao", result.error.issues[0].message);
       return false;
     }
     return true;
@@ -140,7 +101,7 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       const response = await registerUser({
-        name: nome,
+        name: nome.trim(),
         email: email.trim(),
         password: senha,
         phone: telefone ? telefone.replace(/\D/g, "") : undefined,
