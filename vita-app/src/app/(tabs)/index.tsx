@@ -42,16 +42,18 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.searchBar}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="O que precisa hoje?"
-            placeholderTextColor="#999999"
-          />
+        <View style={styles.searchRow}>
+          <View style={styles.searchBar}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="O que precisa hoje?"
+              placeholderTextColor="#999999"
+            />
+          </View>
           <TouchableOpacity style={styles.searchIconCircle}>
             <Image
               source={require("@/assets/images/icons/search-button.png")}
-              style={{ width: 14, height: 14 }}
+              style={{ width: 16, height: 16 }}
               resizeMode="contain"
             />
           </TouchableOpacity>
