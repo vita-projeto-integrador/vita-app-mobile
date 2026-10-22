@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "@/src/hooks/useAuth";
+import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
 import { styles } from "@/src/styles/home.styles";
 
 const tarefasPendentes = [
@@ -27,18 +28,16 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <Text style={styles.greeting}>Olá, {userName}!</Text>
           <View style={styles.headerIcons}>
-            <Image
-              source={require("@/assets/images/icons/bell.png")}
-              style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-            <View style={styles.avatar}>
+            <AnimatedIconButton animation="shake">
               <Image
-                source={require("@/assets/images/icons/tab-perfil.png")}
-                style={{ width: 20, height: 20 }}
+                source={require("@/assets/images/icons/bell.png")}
+                style={{ width: 24, height: 24 }}
                 resizeMode="contain"
               />
-            </View>
+            </AnimatedIconButton>
+            <AnimatedIconButton animation="spin" style={styles.avatar}>
+              <Ionicons name="build" size={18} color="#F5A623" />
+            </AnimatedIconButton>
           </View>
         </View>
 
