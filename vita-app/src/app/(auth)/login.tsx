@@ -1,3 +1,4 @@
+import { showAlert } from "@/src/utils/alert";
 import { loginUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
 import { loginSchema } from "@/src/validation/schemas";
@@ -5,7 +6,6 @@ import { Link, router } from "expo-router";
 import { useState } from "react";
 import { FormInput } from "@/src/components/FormInput";
 import {
-  Alert,
   Image,
   Text,
   TextInput,
@@ -23,7 +23,7 @@ export default function LoginScreen() {
   async function handleLogin() {
     const result = loginSchema.safeParse({ email, password: senha });
     if (!result.success) {
-      Alert.alert("Atenção", result.error.issues[0].message);
+      showAlert("Atenção", result.error.issues[0].message);
       return;
     }
 
@@ -35,7 +35,7 @@ export default function LoginScreen() {
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Não foi possível fazer login.";
-      Alert.alert("Erro", message);
+      showAlert("Erro", message);
     } finally {
       setLoading(false);
     }

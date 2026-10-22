@@ -1,3 +1,4 @@
+import { showAlert } from "@/src/utils/alert";
 import { registerUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
 import { FormInput } from "@/src/components/FormInput";
@@ -15,7 +16,6 @@ import {
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -57,7 +57,7 @@ export default function RegisterScreen() {
     if (step === 1) {
       const result = registerStep1Schema.safeParse({ nome, email });
       if (!result.success) {
-        Alert.alert("Atencao", result.error.issues[0].message);
+        showAlert("Atencao", result.error.issues[0].message);
         return;
       }
     }
@@ -68,7 +68,7 @@ export default function RegisterScreen() {
         accessType,
       });
       if (!result.success) {
-        Alert.alert("Atencao", result.error.issues[0].message);
+        showAlert("Atencao", result.error.issues[0].message);
         return;
       }
     }
@@ -89,7 +89,7 @@ export default function RegisterScreen() {
       curso: accessType === "estudante" ? curso : "",
     });
     if (!result.success) {
-      Alert.alert("Atencao", result.error.issues[0].message);
+      showAlert("Atencao", result.error.issues[0].message);
       return false;
     }
     return true;
@@ -127,7 +127,7 @@ export default function RegisterScreen() {
       if (message.includes("Já existe uma conta")) {
         setShowEmailExistsModal(true);
       } else {
-        Alert.alert("Erro", message);
+        showAlert("Erro", message);
       }
     } finally {
       setLoading(false);
