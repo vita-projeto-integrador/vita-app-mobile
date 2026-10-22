@@ -1,7 +1,3 @@
-export function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
-
 export function isValidDate(value: string) {
   const digits = value.replace(/\D/g, "");
   if (digits.length !== 8) return false;
@@ -9,19 +5,10 @@ export function isValidDate(value: string) {
   const month = Number(digits.slice(2, 4));
   const year = Number(digits.slice(4, 8));
   if (month < 1 || month > 12) return false;
-  if (year < 1900 || year > new Date().getFullYear()) return false;
+  if (year < 1900) return false;
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  return day >= 1 && day <= daysInMonth;
-}
-
-export function isValidCNPJ(value: string) {
-  const digitsOnly = value.replace(/\D/g, "");
-  return digitsOnly.length === 14;
-}
-
-export function isValidPhone(value: string) {
-  const digitsOnly = value.replace(/\D/g, "");
-  return digitsOnly.length === 10 || digitsOnly.length === 11;
+  if (day < 1 || day > daysInMonth) return false;
+  return new Date(year, month - 1, day) <= new Date();
 }
 
 export function formatPhone(value: string) {
@@ -48,6 +35,11 @@ export function formatDate(value: string) {
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+export function fromISODate(isoValue: string) {
+  const [year, month, day] = isoValue.slice(0, 10).split("-");
+  return `${day}/${month}/${year}`;
 }
 
 export function toISODate(displayValue: string) {

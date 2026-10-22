@@ -1,17 +1,18 @@
+import { showAlert } from "@/src/utils/alert";
 import { loginUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
+import { loginSchema } from "@/src/validation/schemas";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { FormInput } from "@/src/components/FormInput";
 import {
-  Alert,
   Image,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { styles } from "./login.styles";
+import { styles } from "@/src/styles/login.styles";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -20,20 +21,21 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
-    if (!email || !senha) {
-      Alert.alert("Atenção", "Preencha email e senha.");
+    const result = loginSchema.safeParse({ email, password: senha });
+    if (!result.success) {
+      showAlert("Atenção", result.error.issues[0].message);
       return;
     }
 
     setLoading(true);
     try {
-      const response = await loginUser({ email, password: senha });
+      const response = await loginUser(result.data);
       await signIn(response.data.token, response.data.user);
       router.replace("/(tabs)");
     } catch (error: any) {
       const message =
         error?.response?.data?.message || "Não foi possível fazer login.";
-      Alert.alert("Erro", message);
+      showAlert("Erro", message);
     } finally {
       setLoading(false);
     }
