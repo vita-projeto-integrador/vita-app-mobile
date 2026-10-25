@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "@/src/hooks/useAuth";
+import { router } from "expo-router";
 import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
 import { styles } from "@/src/styles/home.styles";
 
@@ -92,6 +93,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonPrimary]}
+          onPress={() => router.navigate("/historico")}
         >
           <Text style={styles.actionButtonText}>Histórico de análises</Text>
         </TouchableOpacity>
