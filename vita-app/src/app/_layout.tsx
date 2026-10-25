@@ -1,3 +1,4 @@
+import { AlertHost } from "@/src/components/AlertHost";
 import {
   DarkTheme,
   DefaultTheme,
@@ -24,6 +25,8 @@ export default function RootLayout() {
           <Stack.Screen name="analise/[id]" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
+
+        <AlertHost />
       </ThemeProvider>
     </AuthProvider>
   );

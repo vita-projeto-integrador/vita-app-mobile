@@ -1,11 +1,24 @@
-import { Alert, Platform } from "react-native";
+import { Alert } from "react-native";
 
-// No react-native-web, Alert.alert é uma função vazia (não exibe nada).
-// Na web usamos window.alert para que as mensagens apareçam.
+export type AlertData = {
+  title: string;
+  message?: string;
+};
+
+type Listener = (data: AlertData) => void;
+
+let listener: Listener | null = null;
+
+// Chamado pelo AlertHost ao montar (e com null ao desmontar)
+export function registerAlertListener(fn: Listener | null) {
+  listener = fn;
+}
+
 export function showAlert(title: string, message?: string) {
-  if (Platform.OS === "web") {
-    window.alert(message ? `${title}\n\n${message}` : title);
+  if (listener) {
+    listener({ title, message });
     return;
   }
+  // Plano B: se a caixa ainda não estiver montada
   Alert.alert(title, message);
 }
