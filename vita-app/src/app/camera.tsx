@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
   Linking,
@@ -10,12 +11,16 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LoadingOverlay } from "@/src/components/LoadingOverlay";
 import { PhotoSlots } from "@/src/components/PhotoSlots";
+import { createAnalysis } from "@/src/services/analysisService";
 import { styles } from "@/src/styles/camera.styles";
 import { showAlert } from "@/src/utils/alert";
 import { prepareImage } from "@/src/utils/image";
 
 const MAX_PHOTOS = 4;
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -25,6 +30,7 @@ export default function CameraScreen() {
   // URIs das fotos já preparadas (JPEG reduzido)
   const [photos, setPhotos] = useState<string[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isFull = photos.length >= MAX_PHOTOS;
 
@@ -69,6 +75,33 @@ export default function CameraScreen() {
 
   function handleRemove(index: number) {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleSubmit() {
+    if (!isFull || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      // A splash fica pelo menos 1,5 s, mesmo que o envio seja rápido
+      const [response] = await Promise.all([
+        createAnalysis(photos),
+        wait(1500),
+      ]);
+
+      // Fecha a câmera e volta para as abas já abertas
+      router.dismissTo({
+        pathname: "/historico",
+        params: { aba: "andamento", enviadoEm: String(Date.now()) },
+      });
+      showAlert("Análise enviada", response.message);
+    } catch (error: any) {
+      // Em erro, as fotos continuam na tela para tentar de novo
+      showAlert(
+        "Erro",
+        error?.response?.data?.message || "Não foi possível enviar as fotos.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   // Ainda carregando o estado da permissão
@@ -133,13 +166,15 @@ export default function CameraScreen() {
               styles.sideButton,
               isFull ? styles.confirmEnabled : styles.confirmDisabled,
             ]}
-            disabled={!isFull}
-            // O envio é o Passo 3
+            onPress={handleSubmit}
+            disabled={!isFull || isSubmitting}
           >
             <Ionicons name="checkmark" size={26} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
+
+      <LoadingOverlay visible={isSubmitting} />
     </View>
   );
 }
