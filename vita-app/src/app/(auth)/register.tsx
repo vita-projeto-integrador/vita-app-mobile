@@ -1,11 +1,14 @@
-import { showAlert } from "@/src/utils/alert";
-import { registerUser } from "@/src/services/authService";
-import { useAuth } from "@/src/hooks/useAuth";
+import { ConfirmModal } from "@/src/components/ConfirmModal";
 import { FormInput } from "@/src/components/FormInput";
+import { PasswordRequirements } from "@/src/components/PasswordRequirements";
+import { useAuth } from "@/src/hooks/useAuth";
+import { registerUser } from "@/src/services/authService";
+import { styles } from "@/src/styles/register.styles";
+import { showAlert } from "@/src/utils/alert";
 import {
-  formatPhone,
   formatCNPJ,
   formatDate,
+  formatPhone,
   toISODate,
 } from "@/src/validation/authSchemas";
 import {
@@ -20,13 +23,10 @@ import {
   Platform,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { styles } from "@/src/styles/register.styles";
-import { ConfirmModal } from "@/src/components/ConfirmModal";
 
 type AccessType = "produtor" | "estudante";
 
@@ -185,6 +185,7 @@ export default function RegisterScreen() {
                   secureTextEntry
                   autoCapitalize="none"
                 />
+                    <PasswordRequirements password={senha} />
                 <FormInput
                   label="Confirmar senha"
                   labelStyle={styles.label}
