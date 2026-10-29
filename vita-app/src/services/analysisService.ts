@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import api from "./api";
 
 // Resposta padrão da API: { success, message, data }
@@ -45,14 +46,24 @@ export interface CreatedAnalysis {
 // Envia as 4 fotos (já preparadas em JPEG) para classificação
 export async function createAnalysis(photoUris: string[]) {
   const formData = new FormData();
-  photoUris.forEach((uri, index) => {
-    // No React Native o arquivo entra como { uri, name, type }
-    formData.append("images", {
-      uri,
-      name: `foto-${index + 1}.jpg`,
-      type: "image/jpeg",
-    } as any);
-  });
+
+  for (let index = 0; index < photoUris.length; index++) {
+    const uri = photoUris[index];
+    const name = `foto-${index + 1}.jpg`;
+
+    if (Platform.OS === "web") {
+      // No navegador o anexo precisa ser um arquivo (Blob) de verdade
+      const blob = await (await fetch(uri)).blob();
+      formData.append("images", blob, name);
+    } else {
+      // No React Native o arquivo entra como { uri, name, type }
+      formData.append("images", {
+        uri,
+        name,
+        type: "image/jpeg",
+      } as any);
+    }
+  }
 
   // O api.ts usa application/json por padrão; aqui precisa ser multipart
   const response = await api.post<ApiResponse<CreatedAnalysis>>(
