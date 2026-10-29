@@ -4,10 +4,11 @@ import { getAnalyses } from "@/src/services/analysisService";
 import { styles } from "@/src/styles/home.styles";
 import { isBlackSpot } from "@/src/utils/analysis";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { router, useFocusEffect, useNavigation } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -22,7 +23,7 @@ const tarefasPendentes = [
   { id: "4", texto: "Fazer análise por imagem", cor: "#1E7E34" },
 ];
 
-// Primeiro e último instante do mês atual (no fuso do celular)
+// Primeiro e último instante do mês atual (no fuso do aparelho)
 function getMonthRange() {
   const now = new Date();
   const from = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -40,6 +41,7 @@ function getMonthRange() {
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const userName = user?.name ? user.name.split(" ")[0] : "User";
 
   // null = ainda carregando (mostra "-")
@@ -47,55 +49,71 @@ export default function HomeScreen() {
   const [blackSpotsThisMonth, setBlackSpotsThisMonth] = useState<
     number | null
   >(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Recarrega os números sempre que a home volta a ficar em foco
+  const loadStats = useCallback(async () => {
+    try {
+      const { from, to } = getMonthRange();
+      const response = await getAnalyses(from.toISOString(), to.toISOString());
+      const list = Array.isArray(response.data) ? response.data : [];
+
+      // O filtro também é feito aqui porque o back-end ainda pode
+      // ignorar from/to e devolver análises de outros meses
+      const thisMonth = list.filter((item) => {
+        const date = new Date(item.createdAt);
+        return date >= from && date <= to;
+      });
+
+      setPhotosThisMonth(
+        thisMonth.reduce((total, item) => total + item.imagesCount, 0),
+      );
+      setBlackSpotsThisMonth(
+        thisMonth.filter(
+          (item) =>
+            item.status === "finalizada" &&
+            item.classificacao !== null &&
+            isBlackSpot(item.classificacao.classe),
+        ).length,
+      );
+    } catch {
+      // Se falhar, os cartões continuam como estavam
+    }
+  }, []);
+
+  // Recarrega sempre que a home volta a ficar em foco
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-
-      async function loadStats() {
-        try {
-          const { from, to } = getMonthRange();
-          const response = await getAnalyses(
-            from.toISOString(),
-            to.toISOString(),
-          );
-          const list = Array.isArray(response.data) ? response.data : [];
-
-          // O filtro também é feito aqui porque o back-end ainda pode
-          // ignorar from/to e devolver análises de outros meses
-          const thisMonth = list.filter((item) => {
-            const date = new Date(item.createdAt);
-            return date >= from && date <= to;
-          });
-
-          if (!active) return;
-
-          setPhotosThisMonth(
-            thisMonth.reduce((total, item) => total + item.imagesCount, 0),
-          );
-          setBlackSpotsThisMonth(
-            thisMonth.filter(
-              (item) =>
-                item.status === "finalizada" &&
-                item.classificacao !== null &&
-                isBlackSpot(item.classificacao.classe),
-            ).length,
-          );
-        } catch {
-          // Se falhar, os cartões continuam como estavam
-        }
-      }
-
       loadStats();
-      return () => {
-        active = false;
-      };
-    }, []),
+    }, [loadStats]),
   );
 
+  // Tocar na aba Home quando já está nela também atualiza
+  useEffect(() => {
+    const unsubscribe = (navigation as any).addListener("tabPress", () => {
+      loadStats();
+    });
+    return unsubscribe;
+  }, [navigation, loadStats]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await loadStats();
+    setRefreshing(false);
+  }
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={["#F5A623"]}
+          tintColor="#F5A623"
+        />
+      }
+    >
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.greeting}>Olá, {userName}!</Text>
