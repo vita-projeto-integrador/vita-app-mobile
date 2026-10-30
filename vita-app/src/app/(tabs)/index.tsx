@@ -3,6 +3,7 @@ import { useAuth } from "@/src/hooks/useAuth";
 import { styles } from "@/src/styles/home.styles";
 import { showAlert } from "@/src/utils/alert";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
   Image,
   ScrollView,
@@ -109,6 +110,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonPrimary]}
+          onPress={() => router.navigate("/historico")}
         >
           <Text style={styles.actionButtonText}>Histórico de análises</Text>
         </TouchableOpacity>
