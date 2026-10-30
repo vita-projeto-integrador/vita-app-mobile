@@ -1,4 +1,9 @@
+import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
+import { useAuth } from "@/src/hooks/useAuth";
+import { styles } from "@/src/styles/home.styles";
+import { showAlert } from "@/src/utils/alert";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
   Image,
   ScrollView,
@@ -7,10 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "@/src/hooks/useAuth";
-import { router } from "expo-router";
-import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
-import { styles } from "@/src/styles/home.styles";
 
 const tarefasPendentes = [
   { id: "1", texto: "Aplicar defensivo agrícola", cor: "#E53935" },
@@ -18,6 +19,10 @@ const tarefasPendentes = [
   { id: "3", texto: "Fazer análise por imagem", cor: "#1E7E34" },
   { id: "4", texto: "Fazer análise por imagem", cor: "#1E7E34" },
 ];
+
+function showComingSoon(feature: string) {
+  showAlert("Em breve", `${feature} ainda está em desenvolvimento.`);
+}
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -29,14 +34,21 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <Text style={styles.greeting}>Olá, {userName}!</Text>
           <View style={styles.headerIcons}>
-            <AnimatedIconButton animation="shake">
+            <AnimatedIconButton
+              animation="shake"
+              onPress={() => showComingSoon("As notificações")}
+            >
               <Image
                 source={require("@/assets/images/icons/bell.png")}
                 style={{ width: 24, height: 24 }}
                 resizeMode="contain"
               />
             </AnimatedIconButton>
-            <AnimatedIconButton animation="spin" style={styles.avatar}>
+            <AnimatedIconButton
+              animation="spin"
+              style={styles.avatar}
+              onPress={() => showComingSoon("As ferramentas")}
+            >
               <Ionicons name="build" size={18} color="#F5A623" />
             </AnimatedIconButton>
           </View>
@@ -74,7 +86,12 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Text style={styles.metricsLink}>Ver mais métricas</Text>
+        <Text
+          style={styles.metricsLink}
+          onPress={() => showComingSoon("As métricas detalhadas")}
+        >
+          Ver mais métricas
+        </Text>
 
         <Text style={styles.sectionTitle}>Tarefas pendentes</Text>
         {tarefasPendentes.map((tarefa) => (
@@ -100,6 +117,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={[styles.actionButton, styles.actionButtonSecondary]}
+          onPress={() => showComingSoon("O mapa")}
         >
           <Text style={styles.actionButtonText}>Mapa</Text>
         </TouchableOpacity>
