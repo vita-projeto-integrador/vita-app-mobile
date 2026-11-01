@@ -113,3 +113,41 @@ export function getImageUrl(caminho: string) {
   const base = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
   return `${base}/${caminho.replace(/^\/+/, "")}`;
 }
+
+// ---- Mapa (contrato comum: valores iguais aos da API TS) ----
+
+export type MapStatus = "em_espera" | "processando" | "finalizada" | "falhou";
+export type MapClasse = "saudavel" | "infectado";
+
+export interface AnalysisMapItem {
+  id: string;
+  status: MapStatus;
+  classe: MapClasse | null; // null enquanto não termina ou se falhou
+  confianca: number | null;
+  createdAt: string;
+  latitude: number;
+  longitude: number;
+  precisao: number;
+}
+
+export interface MapFilters {
+  from?: string;
+  to?: string;
+  status?: string; // ex.: "em_espera,processando"
+  classe?: MapClasse;
+}
+
+export interface MapResponse {
+  items: AnalysisMapItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Pontos do mapa (filtros vazios são omitidos pelo axios)
+export async function getMapAnalyses(filters: MapFilters) {
+  const response = await api.get<ApiResponse<MapResponse>>("/analysis/map", {
+    params: filters,
+  });
+  return response.data;
+}
