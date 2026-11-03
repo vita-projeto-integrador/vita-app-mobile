@@ -1,4 +1,6 @@
 import api from "./api";
+import { Platform } from "react-native";
+import type { PhotoLocation } from "@/src/utils/location";
 
 // Resposta padrão da API: { success, message, data }
 export interface ApiResponse<T> {
@@ -35,6 +37,7 @@ export interface AnalysisDetails {
     tempo_execucao: number;
     modelo_cnn: string;
   } | null;
+  localizacao: PhotoLocation | null; // null quando a análise não tem GPS
 }
 
 export interface CreatedAnalysis {
@@ -42,17 +45,41 @@ export interface CreatedAnalysis {
   queued: boolean;
 }
 
+// Uma foto pronta para envio (câmera ou galeria)
+export interface Photo {
+  uri: string;
+  capturadaEm: string | null; // ISO 8601; null na galeria
+  localizacao: PhotoLocation | null; // null na galeria ou sem GPS
+}
+
 // Envia as 4 fotos (já preparadas em JPEG) para classificação
-export async function createAnalysis(photoUris: string[]) {
+export async function createAnalysis(photos: Photo[]) {
   const formData = new FormData();
-  photoUris.forEach((uri, index) => {
-    // No React Native o arquivo entra como { uri, name, type }
-    formData.append("images", {
-      uri,
-      name: `foto-${index + 1}.jpg`,
-      type: "image/jpeg",
-    } as any);
-  });
+
+  for (let index = 0; index < photos.length; index++) {
+    const uri = photos[index].uri;
+    const name = `foto-${index + 1}.jpg`;
+
+    if (Platform.OS === "web") {
+      // No navegador o anexo precisa ser um arquivo (Blob) de verdade
+      const blob = await (await fetch(uri)).blob();
+      formData.append("images", blob, name);
+    } else {
+      // No React Native o arquivo entra como { uri, name, type }
+      formData.append("images", {
+        uri,
+        name,
+        type: "image/jpeg",
+      } as any);
+    }
+  }
+
+  // Dados de cada foto, na mesma ordem dos arquivos
+  const metadados = photos.map((photo) => ({
+    capturadaEm: photo.capturadaEm,
+    localizacao: photo.localizacao,
+  }));
+  formData.append("metadados", JSON.stringify(metadados));
 
   // O api.ts usa application/json por padrão; aqui precisa ser multipart
   const response = await api.post<ApiResponse<CreatedAnalysis>>(

@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Linking,
   StyleSheet,
@@ -14,9 +15,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LoadingOverlay } from "@/src/components/LoadingOverlay";
 import { PhotoSlots } from "@/src/components/PhotoSlots";
 import { createAnalysis } from "@/src/services/analysisService";
+import type { Photo } from "@/src/services/analysisService";
 import { styles } from "@/src/styles/camera.styles";
 import { showAlert } from "@/src/utils/alert";
 import { prepareImage } from "@/src/utils/image";
+import { toPhotoLocation } from "@/src/utils/location";
 
 const MAX_PHOTOS = 4;
 
@@ -27,12 +30,53 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const insets = useSafeAreaInsets();
 
-  // URIs das fotos já preparadas (JPEG reduzido)
-  const [photos, setPhotos] = useState<string[]>([]);
+  // Fotos já preparadas (JPEG reduzido) com horário e localização
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Última leitura do GPS. É uma ref porque muda várias vezes por segundo
+  // e não precisa redesenhar a tela.
+  const lastReading = useRef<Location.LocationObject | null>(null);
+
   const isFull = photos.length >= MAX_PHOTOS;
+
+  // Liga o GPS enquanto a câmera está aberta: quando o usuário dispara,
+  // a leitura já "esquentou" e o disparo não espera o GPS
+  useEffect(() => {
+    if (!permission?.granted) return;
+
+    let subscription: Location.LocationSubscription | null = null;
+    let closed = false;
+
+    async function startGps() {
+      const { granted } = await Location.requestForegroundPermissionsAsync();
+      if (!granted) {
+        showAlert(
+          "Localização desligada",
+          "As fotos serão enviadas, mas esta análise não vai aparecer no mapa.",
+        );
+        return;
+      }
+      const sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, timeInterval: 1000 },
+        (reading) => {
+          lastReading.current = reading;
+        },
+      );
+      // Se a tela fechou enquanto esperava, desliga na hora
+      if (closed) sub.remove();
+      else subscription = sub;
+    }
+
+    startGps();
+
+    // Ao sair da câmera, desliga o GPS
+    return () => {
+      closed = true;
+      subscription?.remove();
+    };
+  }, [permission?.granted]);
 
   async function handleCapture() {
     if (isCapturing || isFull) return;
@@ -42,8 +86,13 @@ export default function CameraScreen() {
         quality: 0.8,
       });
       if (picture) {
+        // Guarda horário e GPS do disparo antes de preparar a imagem
+        const capturadaEm = new Date().toISOString();
+        const localizacao = toPhotoLocation(lastReading.current);
         const uri = await prepareImage(picture.uri);
-        setPhotos((prev) => [...prev, uri].slice(0, MAX_PHOTOS));
+        setPhotos((prev) =>
+          [...prev, { uri, capturadaEm, localizacao }].slice(0, MAX_PHOTOS),
+        );
       }
     } catch {
       showAlert("Erro", "Não foi possível tirar a foto.");
@@ -67,7 +116,14 @@ export default function CameraScreen() {
       const prepared = await Promise.all(
         selected.map((asset) => prepareImage(asset.uri)),
       );
-      setPhotos((prev) => [...prev, ...prepared].slice(0, MAX_PHOTOS));
+
+      // Fotos da galeria vão sem horário e sem localização
+      const galleryPhotos: Photo[] = prepared.map((uri) => ({
+        uri,
+        capturadaEm: null,
+        localizacao: null,
+      }));
+      setPhotos((prev) => [...prev, ...galleryPhotos].slice(0, MAX_PHOTOS));
     } catch {
       showAlert("Erro", "Não foi possível carregar as fotos.");
     }
@@ -138,7 +194,10 @@ export default function CameraScreen() {
 
       <View style={styles.bottom}>
         <View style={styles.slotsWrapper}>
-          <PhotoSlots photos={photos} onRemove={handleRemove} />
+          <PhotoSlots
+            photos={photos.map((photo) => photo.uri)}
+            onRemove={handleRemove}
+          />
         </View>
 
         <View style={[styles.controls, { paddingBottom: 20 + insets.bottom }]}>

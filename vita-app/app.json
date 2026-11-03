@@ -52,6 +52,12 @@
           "photosPermission": "Permita o acesso às fotos para enviar imagens dos frutos.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permita o acesso à localização para marcar no mapa onde cada fruto foi fotografado."
+        }
       ]
     ],
     "experiments": {
