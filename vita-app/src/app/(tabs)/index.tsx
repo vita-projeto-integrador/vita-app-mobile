@@ -1,17 +1,21 @@
-import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
-import { useAuth } from "@/src/hooks/useAuth";
-import { styles } from "@/src/styles/home.styles";
-import { showAlert } from "@/src/utils/alert";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useAuth } from "@/src/hooks/useAuth";
+import { router, useFocusEffect, useNavigation } from "expo-router";
+import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
+import { getAnalyses } from "@/src/services/analysisService";
+import { showAlert } from "@/src/utils/alert";
+import { isBlackSpot } from "@/src/utils/analysis";
+import { styles } from "@/src/styles/home.styles";
 
 const tarefasPendentes = [
   { id: "1", texto: "Aplicar defensivo agrícola", cor: "#E53935" },
@@ -24,12 +28,97 @@ function showComingSoon(feature: string) {
   showAlert("Em breve", `${feature} ainda está em desenvolvimento.`);
 }
 
+// Primeiro e último instante do mês atual (no fuso do aparelho)
+function getMonthRange() {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
+  return { from, to };
+}
+
 export default function HomeScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const userName = user?.name ? user.name.split(" ")[0] : "User";
 
+  // null = ainda carregando (mostra "-")
+  const [photosThisMonth, setPhotosThisMonth] = useState<number | null>(null);
+  const [blackSpotsThisMonth, setBlackSpotsThisMonth] = useState<number | null>(
+    null,
+  );
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const { from, to } = getMonthRange();
+      const response = await getAnalyses(from.toISOString(), to.toISOString());
+      const list = Array.isArray(response.data) ? response.data : [];
+
+      // O filtro também é feito aqui porque o back-end ainda pode
+      // ignorar from/to e devolver análises de outros meses
+      const thisMonth = list.filter((item) => {
+        const date = new Date(item.createdAt);
+        return date >= from && date <= to;
+      });
+
+      setPhotosThisMonth(
+        thisMonth.reduce((total, item) => total + item.imagesCount, 0),
+      );
+      setBlackSpotsThisMonth(
+        thisMonth.filter(
+          (item) =>
+            item.status === "finalizada" &&
+            item.classificacao !== null &&
+            isBlackSpot(item.classificacao.classe),
+        ).length,
+      );
+    } catch {
+      // Se falhar, os cartões continuam como estavam
+    }
+  }, []);
+
+  // Recarrega sempre que a home volta a ficar em foco
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+    }, [loadStats]),
+  );
+
+  // Tocar na aba Home quando já está nela também atualiza
+  useEffect(() => {
+    const unsubscribe = (navigation as any).addListener("tabPress", () => {
+      loadStats();
+    });
+    return unsubscribe;
+  }, [navigation, loadStats]);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await loadStats();
+    setRefreshing(false);
+  }
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          colors={["#F5A623"]}
+          tintColor="#F5A623"
+        />
+      }
+    >
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.greeting}>Olá, {userName}!</Text>
@@ -75,13 +164,13 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.statsRow}>
           <View style={[styles.statCard, styles.statCardLight]}>
-            <Text style={styles.statNumber}>121</Text>
+            <Text style={styles.statNumber}>{photosThisMonth ?? "-"}</Text>
             <Text style={styles.statLabel}>Fotos enviadas este mês</Text>
           </View>
           <View style={[styles.statCard, styles.statCardDark]}>
-            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statNumber}>{blackSpotsThisMonth ?? "-"}</Text>
             <Text style={styles.statLabel}>
-              Nova confirmação de contaminação
+              Pintas pretas detectadas este mês
             </Text>
           </View>
         </View>
