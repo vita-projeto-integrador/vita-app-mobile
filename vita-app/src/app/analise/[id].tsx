@@ -170,6 +170,16 @@ export default function AnalysisDetailsScreen() {
                 label="Imagens"
                 value={String(images.length)}
               />
+              {/* Sem localização, o InfoRow mostra "Não informado" */}
+              <InfoRow
+                icon="locate-outline"
+                label="Precisão do GPS"
+                value={
+                  details.localizacao
+                    ? `± ${Math.round(details.localizacao.precisao)} m`
+                    : null
+                }
+              />
             </View>
 
             {hasResult && classificacao && (
