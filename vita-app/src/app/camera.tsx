@@ -1,3 +1,4 @@
+import { RequireAuth } from "@/src/components/AuthGate";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
@@ -25,7 +26,7 @@ const MAX_PHOTOS = 4;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export default function CameraScreen() {
+function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const insets = useSafeAreaInsets();
@@ -235,5 +236,14 @@ export default function CameraScreen() {
 
       <LoadingOverlay visible={isSubmitting} />
     </View>
+  );
+}
+
+// Tela fora do grupo (tabs): protegida aqui.
+export default function CameraScreenRoute() {
+  return (
+    <RequireAuth>
+      <CameraScreen />
+    </RequireAuth>
   );
 }

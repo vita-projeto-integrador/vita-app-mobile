@@ -13,6 +13,7 @@ import {
   removeToken,
   removeUser,
 } from "@/src/storage/tokenStorage";
+import { setUnauthorizedHandler } from "@/src/services/api";
 
 interface User {
   id: string;
@@ -58,6 +59,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await removeUser();
     setUser(null);
   }
+
+  // Sessão expirada/inválida (API respondeu 401): limpa e volta para o login.
+  // O RequireAuth faz o redirecionamento quando o usuário vira null.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      signOut();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   return (
     <AuthContext.Provider

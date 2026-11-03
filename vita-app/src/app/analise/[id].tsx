@@ -1,3 +1,4 @@
+import { RequireAuth } from "@/src/components/AuthGate";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -21,7 +22,7 @@ import { formatDate, formatTime } from "@/src/utils/date";
 
 type Tab = "dados" | "plano";
 
-export default function AnalysisDetailsScreen() {
+function AnalysisDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [details, setDetails] = useState<AnalysisDetails | null>(null);
@@ -235,5 +236,14 @@ export default function AnalysisDetailsScreen() {
         )}
       </ScrollView>
     </View>
+  );
+}
+
+// Tela fora do grupo (tabs): protegida aqui.
+export default function AnalysisDetailsScreenRoute() {
+  return (
+    <RequireAuth>
+      <AnalysisDetailsScreen />
+    </RequireAuth>
   );
 }
