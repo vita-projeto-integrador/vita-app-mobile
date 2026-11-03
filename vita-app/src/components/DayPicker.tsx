@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentRef } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -18,7 +18,7 @@ interface DayPickerProps {
 }
 
 export function DayPicker({ selectedDate, onChange }: DayPickerProps) {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
