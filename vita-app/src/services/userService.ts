@@ -1,21 +1,8 @@
-import api from './api';
-
-export interface UserProfile {
-  id: string;
-  nome: string;
-  email: string;
-  telefone: string | null;
-  data_nascimento: string | null;
-  tipo_acesso: 'produtor' | 'estudante';
-  endereco: string | null;
-  cnpj: string | null;
-  faculdade: string | null;
-  curso: string | null;
-  createdAt: string;
-}
+import api from "./api";
+import type { ApiResponse, Perfil } from "@/src/types/api";
 
 // A API identifica o usuário pelo token enviado
 export async function getProfile() {
-  const response = await api.get('/user/');
+  const response = await api.get<ApiResponse<Perfil>>("/user/me");
   return response.data;
 }
