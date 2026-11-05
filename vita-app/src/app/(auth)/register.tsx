@@ -5,6 +5,7 @@ import { useAuth } from "@/src/hooks/useAuth";
 import { registerUser } from "@/src/services/authService";
 import { styles } from "@/src/styles/register.styles";
 import { showAlert } from "@/src/utils/alert";
+import { getErrorMessage, getErrorStatus } from "@/src/utils/apiError";
 import {
   formatCNPJ,
   formatDate,
@@ -24,7 +25,7 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -100,34 +101,36 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
+      // campos do formulário -> contrato da API
       const response = await registerUser({
-        name: nome.trim(),
+        nome: nome.trim(),
         email: email.trim(),
-        password: senha,
-        phone: telefone ? telefone.replace(/\D/g, "") : undefined,
-        birthDate: dataNascimento ? toISODate(dataNascimento) : undefined,
-        accessType: accessType!,
-        address: endereco || undefined,
+        senha,
+        perfil: accessType!,
+        telefone: telefone ? telefone.replace(/\D/g, "") : undefined,
+        data_nascimento: dataNascimento ? toISODate(dataNascimento) : undefined,
+        endereco: endereco.trim() || undefined,
         cnpj:
           accessType === "produtor" && cnpj
             ? cnpj.replace(/\D/g, "")
             : undefined,
-        highSchool:
-          accessType === "estudante" ? escola || undefined : undefined,
-        course: accessType === "estudante" ? curso || undefined : undefined,
+        faculdade:
+          accessType === "estudante" ? escola.trim() || undefined : undefined,
+        curso:
+          accessType === "estudante" ? curso.trim() || undefined : undefined,
       });
 
-      await signIn(response.data.token, response.data.user);
+      await signIn(response.data.token, response.data.usuario);
       router.replace("/(tabs)");
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        "Nao foi possivel concluir o cadastro.";
-
-      if (message.includes("Já existe uma conta")) {
+    } catch (error) {
+      // 409 = e-mail já cadastrado (não depende do texto da mensagem)
+      if (getErrorStatus(error) === 409) {
         setShowEmailExistsModal(true);
       } else {
-        showAlert("Erro", message);
+        showAlert(
+          "Erro",
+          getErrorMessage(error, "Nao foi possivel concluir o cadastro."),
+        );
       }
     } finally {
       setLoading(false);
@@ -185,7 +188,7 @@ export default function RegisterScreen() {
                   secureTextEntry
                   autoCapitalize="none"
                 />
-                    <PasswordRequirements password={senha} />
+                <PasswordRequirements password={senha} />
                 <FormInput
                   label="Confirmar senha"
                   labelStyle={styles.label}

@@ -3,7 +3,6 @@ import { isValidDate } from "./authSchemas";
 
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 const INVALID_NAME_CHARS = /[^a-zA-ZÀ-ÿ\s]/;
-const INVALID_ADDRESS_CHARS = /[^a-zA-ZÀ-ÿ0-9\s]/;
 
 const emailField = z
   .string()
@@ -12,12 +11,9 @@ const emailField = z
   .max(100, "Email muito grande")
   .pipe(z.email("Email inválido"));
 
+// A API aceita qualquer caractere (ex.: "Fatec-SP", "Etec 2")
 const schoolOrCourseField = (label: string) =>
-  z
-    .string()
-    .trim()
-    .max(100, `${label} é muito grande`)
-    .refine((v) => !INVALID_NAME_CHARS.test(v), "Contem caracteres proibidos");
+  z.string().trim().max(100, `${label} é muito grande`);
 
 export const loginSchema = z.object({
   email: emailField,
@@ -50,9 +46,18 @@ export const registerStep2Schema = z
     senha: z
       .string()
       .min(8, "A senha deve ter no mínimo 8 caracteres")
+      // o bcrypt da API só considera 72 bytes (acentos ocupam 2)
+      .refine(
+        (v) => new TextEncoder().encode(v).length <= 72,
+        "Senha muito grande",
+      )
       .refine(
         (v) => /[A-Z]/.test(v),
         "Deve conter ao menos uma letra maiúscula",
+      )
+      .refine(
+        (v) => /[a-z]/.test(v),
+        "Deve conter ao menos uma letra minúscula",
       )
       .refine((v) => /[0-9]/.test(v), "Deve conter ao menos um número")
       .refine(
@@ -85,17 +90,18 @@ export const registerStep3Schema = z.object({
     .string()
     .trim()
     .min(1, "Endereço é obrigatório")
-    .max(255, "Endereço muito grande")
-    .refine(
-      (v) => !INVALID_ADDRESS_CHARS.test(v),
-      "Contem caracteres proibidos",
-    ),
+    // a API aceita qualquer caractere: "Rua X, 123 - Centro" é válido
+    .max(255, "Endereço muito grande"),
   cnpj: z
     .string()
     .refine(
       (v) => onlyDigits(v).length === 0 || onlyDigits(v).length === 14,
       "CNPJ deve ter 14 dígitos",
     ),
-  escola: schoolOrCourseField("Nome da escola"),
+  // opcional; se preenchida, a API exige ao menos 3 caracteres
+  escola: schoolOrCourseField("Nome da escola").refine(
+    (v) => v === "" || v.length >= 3,
+    "Nome da escola é muito pequeno",
+  ),
   curso: schoolOrCourseField("Nome do curso"),
 });

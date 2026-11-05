@@ -1,16 +1,18 @@
-import api from './api';
+import api from "./api";
+import type { ApiResponse, AuthData, UserProfile } from "@/src/types/api";
 
-interface RegisterData {
-  name: string;
+// Corpo do cadastro no contrato da API (campos vazios vão como undefined)
+export interface RegisterData {
+  nome: string;
   email: string;
-  password: string;
-  phone?: string;
-  birthDate?: string;
-  accessType: 'produtor' | 'estudante';
-  address?: string;
+  senha: string;
+  perfil: UserProfile;
+  telefone?: string;
+  data_nascimento?: string; // AAAA-MM-DD
+  endereco?: string;
   cnpj?: string;
-  highSchool?: string;
-  course?: string;
+  faculdade?: string;
+  curso?: string;
 }
 
 interface LoginData {
@@ -19,11 +21,17 @@ interface LoginData {
 }
 
 export async function registerUser(data: RegisterData) {
-  const response = await api.post('/user/', data);
+  const response = await api.post<ApiResponse<AuthData>>(
+    "/user/register",
+    data,
+  );
   return response.data;
 }
 
-export async function loginUser(data: LoginData) {
-  const response = await api.post('/login/', data);
+export async function loginUser({ email, password }: LoginData) {
+  const response = await api.post<ApiResponse<AuthData>>("/user/login", {
+    email,
+    senha: password, // nome do campo no contrato da API
+  });
   return response.data;
 }

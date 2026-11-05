@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 const REQUIREMENTS = [
   { label: "Mínimo de 8 caracteres", test: (v: string) => v.length >= 8 },
   { label: "Uma letra maiúscula", test: (v: string) => /[A-Z]/.test(v) },
+  { label: "Uma letra minúscula", test: (v: string) => /[a-z]/.test(v) },
   { label: "Um número", test: (v: string) => /[0-9]/.test(v) },
   {
     label: "Um caractere especial",

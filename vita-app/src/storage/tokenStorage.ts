@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Usuario } from "@/src/types/api";
 
 const TOKEN_KEY = "@vita:token";
 
@@ -14,13 +15,12 @@ export async function removeToken() {
   await AsyncStorage.removeItem(TOKEN_KEY);
 }
 
-const USER_KEY = "@vita:user";
+// v2: o usuário passou a ser { id, nome, email, perfil } (contrato da API TS).
+// Quem tinha o formato antigo ({ name }) não encontra esta chave e entra de novo.
+const USER_KEY = "@vita:user:v2";
+const LEGACY_USER_KEY = "@vita:user";
 
-interface StoredUser {
-  id: string;
-  name: string;
-  email: string;
-}
+export type StoredUser = Usuario;
 
 export async function saveUser(user: StoredUser) {
   await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -32,5 +32,5 @@ export async function getUser(): Promise<StoredUser | null> {
 }
 
 export async function removeUser() {
-  await AsyncStorage.removeItem(USER_KEY);
+  await AsyncStorage.multiRemove([USER_KEY, LEGACY_USER_KEY]);
 }

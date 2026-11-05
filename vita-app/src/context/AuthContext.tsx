@@ -13,13 +13,10 @@ import {
   removeToken,
   removeUser,
 } from "@/src/storage/tokenStorage";
+import type { StoredUser } from "@/src/storage/tokenStorage";
 import { setUnauthorizedHandler } from "@/src/services/api";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+type User = StoredUser; // { id, nome, email, perfil }
 
 interface AuthContextData {
   user: User | null;
