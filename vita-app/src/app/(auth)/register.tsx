@@ -1,0 +1,370 @@
+import { ConfirmModal } from "@/src/components/ConfirmModal";
+import { FormInput } from "@/src/components/FormInput";
+import { PasswordRequirements } from "@/src/components/PasswordRequirements";
+import { useAuth } from "@/src/hooks/useAuth";
+import { registerUser } from "@/src/services/authService";
+import { styles } from "@/src/styles/register.styles";
+import { showAlert } from "@/src/utils/alert";
+import { getErrorMessage, getErrorStatus } from "@/src/utils/apiError";
+import {
+  formatCNPJ,
+  formatDate,
+  formatPhone,
+  toISODate,
+} from "@/src/validation/authSchemas";
+import {
+  registerStep1Schema,
+  registerStep2Schema,
+  registerStep3Schema,
+} from "@/src/validation/schemas";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+type AccessType = "produtor" | "estudante";
+
+const TOTAL_STEPS = 3;
+
+export default function RegisterScreen() {
+  const router = useRouter();
+  const { signIn } = useAuth();
+  const [step, setStep] = useState(1);
+  const [showEmailExistsModal, setShowEmailExistsModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+
+  const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [accessType, setAccessType] = useState<AccessType | null>(null);
+
+  const [telefone, setTelefone] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [escola, setEscola] = useState("");
+  const [curso, setCurso] = useState("");
+
+  function handleAvancar() {
+    if (step === 1) {
+      const result = registerStep1Schema.safeParse({ nome, email });
+      if (!result.success) {
+        showAlert("Atencao", result.error.issues[0].message);
+        return;
+      }
+    }
+    if (step === 2) {
+      const result = registerStep2Schema.safeParse({
+        senha,
+        confirmarSenha,
+        accessType,
+      });
+      if (!result.success) {
+        showAlert("Atencao", result.error.issues[0].message);
+        return;
+      }
+    }
+    setStep((prev) => Math.min(prev + 1, TOTAL_STEPS));
+  }
+
+  function handleVoltar() {
+    setStep((prev) => Math.max(prev - 1, 1));
+  }
+
+  function validateStep3() {
+    const result = registerStep3Schema.safeParse({
+      telefone,
+      dataNascimento,
+      endereco,
+      cnpj: accessType === "produtor" ? cnpj : "",
+      escola: accessType === "estudante" ? escola : "",
+      curso: accessType === "estudante" ? curso : "",
+    });
+    if (!result.success) {
+      showAlert("Atencao", result.error.issues[0].message);
+      return false;
+    }
+    return true;
+  }
+
+  async function handleFinalizar() {
+    if (!validateStep3()) return;
+
+    setLoading(true);
+    try {
+      // campos do formulário -> contrato da API
+      const response = await registerUser({
+        nome: nome.trim(),
+        email: email.trim(),
+        senha,
+        perfil: accessType!,
+        telefone: telefone ? telefone.replace(/\D/g, "") : undefined,
+        data_nascimento: dataNascimento ? toISODate(dataNascimento) : undefined,
+        endereco: endereco.trim() || undefined,
+        cnpj:
+          accessType === "produtor" && cnpj
+            ? cnpj.replace(/\D/g, "")
+            : undefined,
+        faculdade:
+          accessType === "estudante" ? escola.trim() || undefined : undefined,
+        curso:
+          accessType === "estudante" ? curso.trim() || undefined : undefined,
+      });
+
+      await signIn(response.data.token, response.data.usuario);
+      router.replace("/(tabs)");
+    } catch (error) {
+      // 409 = e-mail já cadastrado (não depende do texto da mensagem)
+      if (getErrorStatus(error) === 409) {
+        setShowEmailExistsModal(true);
+      } else {
+        showAlert(
+          "Erro",
+          getErrorMessage(error, "Nao foi possivel concluir o cadastro."),
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const progress = step / TOTAL_STEPS;
+
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Comecar gratuitamente</Text>
+            <Text style={styles.subtitle}>
+              Crie uma conta <Text style={styles.brand}>Vita</Text>
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            {step === 1 && (
+              <>
+                <FormInput
+                  label="Nome completo"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={nome}
+                  onChangeText={setNome}
+                  autoCapitalize="words"
+                />
+
+                <FormInput
+                  label="Email"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <FormInput
+                  label="Senha"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={senha}
+                  onChangeText={setSenha}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+                <PasswordRequirements password={senha} />
+                <FormInput
+                  label="Confirmar senha"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={confirmarSenha}
+                  onChangeText={setConfirmarSenha}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+
+                <Text style={styles.label}>Tipo de acesso</Text>
+                <View style={styles.optionsRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.optionButton,
+                      accessType === "produtor" && styles.optionButtonSelected,
+                    ]}
+                    onPress={() => setAccessType("produtor")}
+                  >
+                    <Text
+                      style={[
+                        styles.optionButtonText,
+                        accessType === "produtor" &&
+                          styles.optionButtonTextSelected,
+                      ]}
+                    >
+                      Produtor
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.optionButton,
+                      accessType === "estudante" && styles.optionButtonSelected,
+                    ]}
+                    onPress={() => setAccessType("estudante")}
+                  >
+                    <Text
+                      style={[
+                        styles.optionButtonText,
+                        accessType === "estudante" &&
+                          styles.optionButtonTextSelected,
+                      ]}
+                    >
+                      Estudante
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <FormInput
+                  label="Telefone"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={telefone}
+                  onChangeText={(text) => setTelefone(formatPhone(text))}
+                  keyboardType="phone-pad"
+                  placeholder="(11) 99999-0000"
+                  maxLength={15}
+                />
+
+                <FormInput
+                  label="Data de nascimento"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={dataNascimento}
+                  onChangeText={(text) => setDataNascimento(formatDate(text))}
+                  keyboardType="numeric"
+                  placeholder="00/00/0000"
+                  maxLength={10}
+                />
+
+                <FormInput
+                  label="Endereco"
+                  labelStyle={styles.label}
+                  inputStyle={styles.input}
+                  value={endereco}
+                  onChangeText={setEndereco}
+                />
+
+                {accessType === "produtor" && (
+                  <FormInput
+                    label="CNPJ"
+                    labelStyle={styles.label}
+                    inputStyle={styles.input}
+                    value={cnpj}
+                    onChangeText={(text) => setCnpj(formatCNPJ(text))}
+                    keyboardType="numeric"
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                  />
+                )}
+
+                {accessType === "estudante" && (
+                  <>
+                    <FormInput
+                      label="Escola"
+                      labelStyle={styles.label}
+                      inputStyle={styles.input}
+                      value={escola}
+                      onChangeText={setEscola}
+                    />
+
+                    <FormInput
+                      label="Curso"
+                      labelStyle={styles.label}
+                      inputStyle={styles.input}
+                      value={curso}
+                      onChangeText={setCurso}
+                    />
+                  </>
+                )}
+              </>
+            )}
+
+            <View style={styles.buttonRow}>
+              {step > 1 ? (
+                <TouchableOpacity onPress={handleVoltar}>
+                  <Text style={styles.backButtonText}>Voltar</Text>
+                </TouchableOpacity>
+              ) : (
+                <View />
+              )}
+
+              {step < TOTAL_STEPS ? (
+                <TouchableOpacity style={styles.button} onPress={handleAvancar}>
+                  <Text style={styles.buttonText}>Avancar</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.button}
+                  onPress={handleFinalizar}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>
+                    {loading ? "Enviando..." : "Finalizar cadastro"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.progressTrack}>
+            <View
+              style={[styles.progressFill, { width: `${progress * 100}%` }]}
+            />
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Ja possui uma conta?{" "}
+            <Text
+              style={styles.footerLink}
+              onPress={() => router.push("/(auth)/login")}
+            >
+              Acessar agora.
+            </Text>
+          </Text>
+        </View>
+      </KeyboardAvoidingView>
+      <ConfirmModal
+        visible={showEmailExistsModal}
+        title="Email ja cadastrado"
+        message="Ja existe uma conta com esse email. Deseja ir para a tela de login?"
+        confirmText="Ir para Login"
+        cancelText="Cancelar"
+        onConfirm={() => {
+          setShowEmailExistsModal(false);
+          router.push("/(auth)/login");
+        }}
+        onCancel={() => setShowEmailExistsModal(false)}
+      />
+    </SafeAreaView>
+  );
+}
