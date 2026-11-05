@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getImageUrl } from "@/src/services/analysisService";
-import type { AnalysisListItem } from "@/src/services/analysisService";
+import type { AnalysisListItem } from "@/src/types/api";
 import {
   STATUS_LABELS,
   getBadgeLabel,
@@ -17,8 +16,8 @@ function getBadge(item: AnalysisListItem): {
   label: string;
   variant: BadgeVariant;
 } {
-  if (item.status === "cancelada") {
-    return { label: STATUS_LABELS.cancelada, variant: "gray" };
+  if (item.status === "falhou") {
+    return { label: STATUS_LABELS.falhou, variant: "gray" };
   }
   if (isInProgress(item.status)) {
     return { label: STATUS_LABELS[item.status], variant: "amber" };
@@ -51,7 +50,7 @@ export function AnalysisRow({ item, onPress }: AnalysisRowProps) {
 
       <View style={styles.timeColumn}>
         <Text style={styles.timeText}>Enviado às</Text>
-        <Text style={styles.timeText}>{formatTime(item.createdAt)}</Text>
+        <Text style={styles.timeText}>{formatTime(item.criado_em)}</Text>
       </View>
 
       <View style={styles.resultColumn}>
@@ -63,11 +62,9 @@ export function AnalysisRow({ item, onPress }: AnalysisRowProps) {
       </View>
 
       <View style={styles.imageColumn}>
-        {item.thumbnail ? (
-          <Image
-            source={{ uri: getImageUrl(item.thumbnail) }}
-            style={styles.thumbnail}
-          />
+        {/* miniatura já vem como URL assinada (vale por tempo limitado) */}
+        {item.miniatura ? (
+          <Image source={{ uri: item.miniatura }} style={styles.thumbnail} />
         ) : (
           <View style={[styles.thumbnail, styles.thumbnailEmpty]}>
             <Ionicons name="images-outline" size={22} color="#94A3B8" />

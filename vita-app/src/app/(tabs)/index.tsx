@@ -47,7 +47,7 @@ function getMonthRange() {
 export default function HomeScreen() {
   const { user } = useAuth();
   const navigation = useNavigation();
-  const userName = user?.name ? user.name.split(" ")[0] : "User";
+  const userName = user?.nome ? user.nome.split(" ")[0] : "User";
 
   // null = ainda carregando (mostra "-")
   const [photosThisMonth, setPhotosThisMonth] = useState<number | null>(null);
@@ -59,18 +59,13 @@ export default function HomeScreen() {
   const loadStats = useCallback(async () => {
     try {
       const { from, to } = getMonthRange();
+      // A API já filtra pelo período. Limite de 100 por página: acima disso
+      // os cartões contam só as 100 mais recentes (até existir a rota de estatísticas)
       const response = await getAnalyses(from.toISOString(), to.toISOString());
-      const list = Array.isArray(response.data) ? response.data : [];
-
-      // O filtro também é feito aqui porque o back-end ainda pode
-      // ignorar from/to e devolver análises de outros meses
-      const thisMonth = list.filter((item) => {
-        const date = new Date(item.createdAt);
-        return date >= from && date <= to;
-      });
+      const thisMonth = response.data.items;
 
       setPhotosThisMonth(
-        thisMonth.reduce((total, item) => total + item.imagesCount, 0),
+        thisMonth.reduce((total, item) => total + item.total_imagens, 0),
       );
       setBlackSpotsThisMonth(
         thisMonth.filter(
