@@ -1,10 +1,12 @@
-import axios from 'axios';
-import { getToken } from '../storage/tokenStorage';
+import axios from "axios";
+import { getToken } from "../storage/tokenStorage";
 
+// EXPO_PUBLIC_API_URL já inclui o /api (ex.: http://192.168.0.10:8080/api)
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
+  timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
