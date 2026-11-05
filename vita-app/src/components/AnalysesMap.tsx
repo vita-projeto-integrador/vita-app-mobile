@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { StyleSheet } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import type { AnalysisMapItem } from "@/src/services/analysisService";
+import type { AnalysisMapItem } from "@/src/types/api";
 import { getPinColor } from "@/src/utils/map";
 
 // Único arquivo do app que conhece a biblioteca de mapa.

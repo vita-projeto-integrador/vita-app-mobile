@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { InfoRow } from "@/src/components/InfoRow";
-import type { AnalysisMapItem } from "@/src/services/analysisService";
+import type { AnalysisMapItem } from "@/src/types/api";
 import { formatDate, formatTime } from "@/src/utils/date";
 import { getMapLabel, getPinColor } from "@/src/utils/map";
 
@@ -26,7 +26,7 @@ export function MapAnalysisCard({ item, onClose }: MapAnalysisCardProps) {
       <InfoRow
         icon="calendar-outline"
         label="Data"
-        value={`${formatDate(item.createdAt)} às ${formatTime(item.createdAt)}`}
+        value={`${formatDate(item.criado_em)} às ${formatTime(item.criado_em)}`}
       />
       {item.confianca !== null && (
         <InfoRow
