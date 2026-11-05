@@ -19,9 +19,12 @@ import { createAnalysis } from "@/src/services/analysisService";
 import type { Photo } from "@/src/services/analysisService";
 import { styles } from "@/src/styles/camera.styles";
 import { showAlert } from "@/src/utils/alert";
+import { getErrorMessage } from "@/src/utils/apiError";
 import { prepareImage } from "@/src/utils/image";
 import { toPhotoLocation } from "@/src/utils/location";
 
+// A API aceita de 1 a 4 fotos; 4 posições diferentes dão um resultado melhor
+const MIN_PHOTOS = 1;
 const MAX_PHOTOS = 4;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,6 +44,7 @@ function CameraScreen() {
   const lastReading = useRef<Location.LocationObject | null>(null);
 
   const isFull = photos.length >= MAX_PHOTOS;
+  const canSubmit = photos.length >= MIN_PHOTOS;
 
   // Liga o GPS enquanto a câmera está aberta: quando o usuário dispara,
   // a leitura já "esquentou" e o disparo não espera o GPS
@@ -135,7 +139,7 @@ function CameraScreen() {
   }
 
   async function handleSubmit() {
-    if (!isFull || isSubmitting) return;
+    if (!canSubmit || isSubmitting) return;
     setIsSubmitting(true);
     try {
       // A splash fica pelo menos 1,5 s, mesmo que o envio seja rápido
@@ -150,11 +154,11 @@ function CameraScreen() {
         params: { aba: "andamento", enviadoEm: String(Date.now()) },
       });
       showAlert("Análise enviada", response.message);
-    } catch (error: any) {
+    } catch (error) {
       // Em erro, as fotos continuam na tela para tentar de novo
       showAlert(
         "Erro",
-        error?.response?.data?.message || "Não foi possível enviar as fotos.",
+        getErrorMessage(error, "Não foi possível enviar as fotos."),
       );
     } finally {
       setIsSubmitting(false);
@@ -224,10 +228,10 @@ function CameraScreen() {
           <TouchableOpacity
             style={[
               styles.sideButton,
-              isFull ? styles.confirmEnabled : styles.confirmDisabled,
+              canSubmit ? styles.confirmEnabled : styles.confirmDisabled,
             ]}
             onPress={handleSubmit}
-            disabled={!isFull || isSubmitting}
+            disabled={!canSubmit || isSubmitting}
           >
             <Ionicons name="checkmark" size={26} color="#FFFFFF" />
           </TouchableOpacity>
