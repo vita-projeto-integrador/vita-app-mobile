@@ -1,7 +1,4 @@
-import type {
-  AnalysisMapItem,
-  MapClasse,
-} from "@/src/services/analysisService";
+import type { AnalysisMapItem, ClassificationClass } from "@/src/types/api";
 
 // ---- Filtros (botões acima do mapa) ----
 
@@ -22,7 +19,10 @@ export const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "falhou", label: "Falharam" },
 ];
 
-export const CLASSE_OPTIONS: { value: MapClasse | ""; label: string }[] = [
+export const CLASSE_OPTIONS: {
+  value: ClassificationClass | "";
+  label: string;
+}[] = [
   { value: "", label: "Todas" },
   { value: "infectado", label: "Pinta preta" },
   { value: "saudavel", label: "Saudável" },

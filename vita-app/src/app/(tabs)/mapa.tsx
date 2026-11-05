@@ -6,12 +6,10 @@ import { MapAnalysisCard } from "@/src/components/MapAnalysisCard";
 import { MapFilters } from "@/src/components/MapFilters";
 import { ScreenHeader } from "@/src/components/ScreenHeader";
 import { getMapAnalyses } from "@/src/services/analysisService";
-import type {
-  AnalysisMapItem,
-  MapClasse,
-} from "@/src/services/analysisService";
+import type { AnalysisMapItem, ClassificationClass } from "@/src/types/api";
 import { styles } from "@/src/styles/mapa.styles";
 import { showAlert } from "@/src/utils/alert";
+import { getErrorMessage } from "@/src/utils/apiError";
 import { getPeriodRange, MAP_LEGEND } from "@/src/utils/map";
 import type { Period } from "@/src/utils/map";
 
@@ -19,7 +17,7 @@ export default function MapaScreen() {
   // Filtros (valores iniciais: últimos 30 dias, todos os status e classes)
   const [period, setPeriod] = useState<Period>("30d");
   const [status, setStatus] = useState("");
-  const [classe, setClasse] = useState<MapClasse | "">("");
+  const [classe, setClasse] = useState<ClassificationClass | "">("");
 
   const [analyses, setAnalyses] = useState<AnalysisMapItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -37,10 +35,10 @@ export default function MapaScreen() {
       setAnalyses(response.data.items);
       setTotal(response.data.total);
       setSelected(null);
-    } catch (error: any) {
+    } catch (error) {
       showAlert(
         "Erro",
-        error?.response?.data?.message || "Não foi possível carregar o mapa.",
+        getErrorMessage(error, "Não foi possível carregar o mapa."),
       );
     } finally {
       setLoading(false);
@@ -55,7 +53,7 @@ export default function MapaScreen() {
   );
 
   // Só análises finalizadas têm classe: escolher uma classe fixa o status
-  function handleChangeClasse(value: MapClasse | "") {
+  function handleChangeClasse(value: ClassificationClass | "") {
     setClasse(value);
     if (value) setStatus("finalizada");
   }

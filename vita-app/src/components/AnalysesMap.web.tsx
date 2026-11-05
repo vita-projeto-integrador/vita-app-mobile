@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import type { AnalysisMapItem } from "@/src/services/analysisService";
+import type { AnalysisMapItem } from "@/src/types/api";
 
 // Versão web do AnalysesMap.
 // O react-native-maps só funciona em Android/iOS: no navegador ele quebra o

@@ -1,6 +1,6 @@
 import { RequireAuth } from "@/src/components/AuthGate";
-import { useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -11,12 +11,10 @@ import {
 } from "react-native";
 import { InfoRow } from "@/src/components/InfoRow";
 import { ScreenHeader } from "@/src/components/ScreenHeader";
-import {
-  getAnalysisDetails,
-  getImageUrl,
-} from "@/src/services/analysisService";
-import type { AnalysisDetails } from "@/src/services/analysisService";
+import { getAnalysisDetails } from "@/src/services/analysisService";
+import type { AnalysisDetails } from "@/src/types/api";
 import { styles } from "@/src/styles/analise.styles";
+import { getErrorMessage } from "@/src/utils/apiError";
 import { ACTION_PLAN, getResultLabel, isBlackSpot } from "@/src/utils/analysis";
 import { formatDate, formatTime } from "@/src/utils/date";
 
@@ -31,22 +29,26 @@ function AnalysisDetailsScreen() {
   const [tab, setTab] = useState<Tab>("dados");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  useEffect(() => {
-    async function loadDetails() {
-      try {
-        const response = await getAnalysisDetails(id);
-        setDetails(response.data);
-      } catch (err: any) {
-        setError(
-          err?.response?.data?.message ||
-            "Não foi possível carregar a análise.",
-        );
-      } finally {
-        setLoading(false);
+  // Busca de novo sempre que a tela volta a ficar em foco:
+  // as URLs das imagens são assinadas e vencem (60 min por padrão)
+  useFocusEffect(
+    useCallback(() => {
+      async function loadDetails() {
+        try {
+          const response = await getAnalysisDetails(id);
+          setDetails(response.data);
+          setError("");
+        } catch (err) {
+          setError(
+            getErrorMessage(err, "Não foi possível carregar a análise."),
+          );
+        } finally {
+          setLoading(false);
+        }
       }
-    }
-    loadDetails();
-  }, [id]);
+      loadDetails();
+    }, [id]),
+  );
 
   const header = <ScreenHeader title="Detalhes da análise" showBack />;
 
@@ -79,7 +81,7 @@ function AnalysisDetailsScreen() {
         {header}
         <View style={styles.centered}>
           <Text style={styles.message}>
-            {details.status === "cancelada"
+            {details.status === "falhou"
               ? "Esta análise falhou."
               : "Esta análise ainda está em processamento."}
           </Text>
@@ -88,13 +90,11 @@ function AnalysisDetailsScreen() {
     );
   }
 
-  const images = details.imagem ?? [];
-  const classificacao = details.classificacao;
-  const classe = classificacao?.classe;
-  const hasResult = classe !== undefined && classe !== null;
-  const resultColor = hasResult && isBlackSpot(classe) ? "#DC2626" : "#16A34A";
-  const resultBackground =
-    hasResult && isBlackSpot(classe) ? "#FEE2E2" : "#DCFCE7";
+  const images = details.imagens;
+  const classificacao = details.classificacao; // null se a análise não tem resultado
+  const infected = classificacao ? isBlackSpot(classificacao.classe) : false;
+  const resultColor = infected ? "#DC2626" : "#16A34A";
+  const resultBackground = infected ? "#FEE2E2" : "#DCFCE7";
   const confidence = classificacao ? classificacao.confianca * 100 : 0;
 
   // As miniaturas são as fotos que não estão na grande
@@ -135,7 +135,7 @@ function AnalysisDetailsScreen() {
             {images.length > 0 && (
               <View style={styles.gallery}>
                 <Image
-                  source={{ uri: getImageUrl(images[selectedIndex].caminho) }}
+                  source={{ uri: images[selectedIndex].url }}
                   style={styles.mainImage}
                 />
                 <View style={styles.thumbs}>
@@ -146,7 +146,7 @@ function AnalysisDetailsScreen() {
                       activeOpacity={0.7}
                     >
                       <Image
-                        source={{ uri: getImageUrl(images[index].caminho) }}
+                        source={{ uri: images[index].url }}
                         style={styles.thumb}
                       />
                     </TouchableOpacity>
@@ -159,12 +159,12 @@ function AnalysisDetailsScreen() {
               <InfoRow
                 icon="calendar-outline"
                 label="Data"
-                value={formatDate(details.createdAt)}
+                value={formatDate(details.criado_em)}
               />
               <InfoRow
                 icon="time-outline"
                 label="Hora"
-                value={formatTime(details.createdAt)}
+                value={formatTime(details.criado_em)}
               />
               <InfoRow
                 icon="images-outline"
@@ -183,7 +183,7 @@ function AnalysisDetailsScreen() {
               />
             </View>
 
-            {hasResult && classificacao && (
+            {classificacao && (
               <>
                 <Text style={styles.sectionTitle}>Resultados da IA</Text>
                 <View
@@ -195,7 +195,7 @@ function AnalysisDetailsScreen() {
                   <Text
                     style={[styles.resultBadgeText, { color: resultColor }]}
                   >
-                    {getResultLabel(classe)}
+                    {getResultLabel(classificacao.classe)}
                   </Text>
                 </View>
 
@@ -217,7 +217,8 @@ function AnalysisDetailsScreen() {
                 </View>
 
                 <Text style={styles.footerText}>
-                  Modelo: {classificacao.modelo_cnn} · Tempo de execução:{" "}
+                  Modelo: {classificacao.modelo_cnn} (versão{" "}
+                  {classificacao.versao_modelo}) · Tempo de execução:{" "}
                   {classificacao.tempo_execucao} ms
                 </Text>
               </>
@@ -225,8 +226,8 @@ function AnalysisDetailsScreen() {
           </>
         ) : (
           <>
-            {hasResult &&
-              (ACTION_PLAN[classe] ?? []).map((card) => (
+            {classificacao &&
+              ACTION_PLAN[classificacao.classe].map((card) => (
                 <View key={card.titulo} style={styles.planCard}>
                   <Text style={styles.planTitle}>{card.titulo}</Text>
                   <Text style={styles.planText}>{card.texto}</Text>

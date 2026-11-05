@@ -1,37 +1,32 @@
-import type { AnalysisStatus } from "@/src/services/analysisService";
+import type { AnalysisStatus, ClassificationClass } from "@/src/types/api";
 
 // Status que aparecem na aba "Em andamento"
-export const IN_PROGRESS: AnalysisStatus[] = [
-  "pendente",
-  "em_fila",
-  "classificando",
-];
+export const IN_PROGRESS: AnalysisStatus[] = ["em_espera", "processando"];
 
 export function isInProgress(status: AnalysisStatus) {
   return IN_PROGRESS.includes(status);
 }
 
-// Rótulo de cada status na lista
+// Rótulo de cada status na lista (Record: status novo na API vira erro de tipo aqui)
 export const STATUS_LABELS: Record<AnalysisStatus, string> = {
-  pendente: "Aguardando",
-  em_fila: "Na fila",
-  classificando: "Classificando",
+  em_espera: "Na fila",
+  processando: "Classificando",
   finalizada: "Finalizada",
-  cancelada: "Falhou",
+  falhou: "Falhou",
 };
 
-// A API devolve a classe como número: 1 = pinta preta, 0 = saudável
-export function isBlackSpot(classe: number) {
-  return classe === 1;
+// A API devolve a classe como texto: "infectado" = pinta preta, "saudavel" = saudável
+export function isBlackSpot(classe: ClassificationClass) {
+  return classe === "infectado";
 }
 
 // Badge curto da lista
-export function getBadgeLabel(classe: number) {
+export function getBadgeLabel(classe: ClassificationClass) {
   return isBlackSpot(classe) ? "Detectada" : "Saudável";
 }
 
 // Texto completo do resultado, nos detalhes
-export function getResultLabel(classe: number) {
+export function getResultLabel(classe: ClassificationClass) {
   return isBlackSpot(classe) ? "Pinta preta detectada" : "Saudável";
 }
 
@@ -47,42 +42,44 @@ export const FAILED_NOTICE = {
 };
 
 // Plano de ação por classe (mesmos textos do web)
-export const ACTION_PLAN: Record<number, { titulo: string; texto: string }[]> =
-  {
-    0: [
-      {
-        titulo: "Monitoramento",
-        texto:
-          "Aplicação de defensivos cúpricos (à base de cobre) durante o crescimento dos frutos.",
-      },
-      {
-        titulo: "Nutrição preventiva",
-        texto: "Reforço nutricional com Potássio, Cálcio e de fosfitos",
-      },
-      {
-        titulo: "Biossegurança",
-        texto:
-          "Manter maquinários e ferramentas lavadas para evitar a contaminação vinda de outras áreas",
-      },
-    ],
-    1: [
-      {
-        titulo: "Pulverização preventiva",
-        texto:
-          "Revisão do calendário de pulverização e aplicação de fungicida localizado",
-      },
-      {
-        titulo: "Manejo de serrapilheira",
-        texto:
-          "Triturar folhas caídas e aplicar produtos para acelerar decomposição",
-      },
-      {
-        titulo: "Podas de ventilação",
-        texto: "Realizar podas para melhorar ventilação e iluminação",
-      },
-      {
-        titulo: "Monitoramento contínuo",
-        texto: "Agende novas fotos do mesmo pé e intensifique as inspeções",
-      },
-    ],
-  };
+export const ACTION_PLAN: Record<
+  ClassificationClass,
+  { titulo: string; texto: string }[]
+> = {
+  saudavel: [
+    {
+      titulo: "Monitoramento",
+      texto:
+        "Aplicação de defensivos cúpricos (à base de cobre) durante o crescimento dos frutos.",
+    },
+    {
+      titulo: "Nutrição preventiva",
+      texto: "Reforço nutricional com Potássio, Cálcio e de fosfitos",
+    },
+    {
+      titulo: "Biossegurança",
+      texto:
+        "Manter maquinários e ferramentas lavadas para evitar a contaminação vinda de outras áreas",
+    },
+  ],
+  infectado: [
+    {
+      titulo: "Pulverização preventiva",
+      texto:
+        "Revisão do calendário de pulverização e aplicação de fungicida localizado",
+    },
+    {
+      titulo: "Manejo de serrapilheira",
+      texto:
+        "Triturar folhas caídas e aplicar produtos para acelerar decomposição",
+    },
+    {
+      titulo: "Podas de ventilação",
+      texto: "Realizar podas para melhorar ventilação e iluminação",
+    },
+    {
+      titulo: "Monitoramento contínuo",
+      texto: "Agende novas fotos do mesmo pé e intensifique as inspeções",
+    },
+  ],
+};

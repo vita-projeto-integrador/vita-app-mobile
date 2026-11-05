@@ -1,17 +1,12 @@
 import { showAlert } from "@/src/utils/alert";
+import { getErrorMessage } from "@/src/utils/apiError";
 import { loginUser } from "@/src/services/authService";
 import { useAuth } from "@/src/hooks/useAuth";
 import { loginSchema } from "@/src/validation/schemas";
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { FormInput } from "@/src/components/FormInput";
-import {
-  Image,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { styles } from "@/src/styles/login.styles";
 
 export default function LoginScreen() {
@@ -30,12 +25,14 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await loginUser(result.data);
-      await signIn(response.data.token, response.data.user);
+      await signIn(response.data.token, response.data.usuario);
       router.replace("/(tabs)");
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message || "Não foi possível fazer login.";
-      showAlert("Erro", message);
+    } catch (error) {
+      // 401 da API = e-mail ou senha inválidos (a mensagem vem pronta)
+      showAlert(
+        "Erro",
+        getErrorMessage(error, "Não foi possível fazer login."),
+      );
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";
-import type { MapClasse } from "@/src/services/analysisService";
+import type { ClassificationClass } from "@/src/types/api";
 import {
   CLASSE_OPTIONS,
   PERIOD_OPTIONS,
@@ -46,10 +46,10 @@ function ChipRow<T extends string>({
 interface MapFiltersProps {
   period: Period;
   status: string;
-  classe: MapClasse | "";
+  classe: ClassificationClass | "";
   onChangePeriod: (value: Period) => void;
   onChangeStatus: (value: string) => void;
-  onChangeClasse: (value: MapClasse | "") => void;
+  onChangeClasse: (value: ClassificationClass | "") => void;
 }
 
 export function MapFilters(props: MapFiltersProps) {

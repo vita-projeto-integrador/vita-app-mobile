@@ -1,58 +1,27 @@
 import api from "./api";
 import { Platform } from "react-native";
-import type { PhotoLocation } from "@/src/utils/location";
+import type {
+  AnalysisDetails,
+  AnalysisListItem,
+  AnalysisMapItem,
+  ApiResponse,
+  CreatedAnalysis,
+  Localizacao,
+  MapFilters,
+  Paginated,
+} from "@/src/types/api";
 
-// Resposta padrão da API: { success, message, data }
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
-
-export type AnalysisStatus =
-  | "pendente"
-  | "em_fila"
-  | "classificando"
-  | "finalizada"
-  | "cancelada";
-
-export interface AnalysisListItem {
-  id: string;
-  status: AnalysisStatus;
-  createdAt: string; // vem em UTC
-  imagesCount: number;
-  thumbnail: string | null;
-  // classe: 1 = pinta preta, 0 = saudável (chega como número)
-  classificacao: { classe: number; confianca: number } | null;
-}
-
-export interface AnalysisDetails {
-  id: string;
-  status: AnalysisStatus;
-  createdAt: string;
-  imagem: { caminho: string }[];
-  classificacao: {
-    classe: number;
-    confianca: number; // de 0 a 1
-    tempo_execucao: number;
-    modelo_cnn: string;
-  } | null;
-  localizacao: PhotoLocation | null; // null quando a análise não tem GPS
-}
-
-export interface CreatedAnalysis {
-  analysis: { id: string; status: AnalysisStatus; createdAt: string };
-  queued: boolean;
-}
+// Máximo que a API aceita por página
+const MAX_LIMIT = 100;
 
 // Uma foto pronta para envio (câmera ou galeria)
 export interface Photo {
   uri: string;
   capturadaEm: string | null; // ISO 8601; null na galeria
-  localizacao: PhotoLocation | null; // null na galeria ou sem GPS
+  localizacao: Localizacao | null; // null na galeria ou sem GPS
 }
 
-// Envia as 4 fotos (já preparadas em JPEG) para classificação
+// Envia de 1 a 4 fotos (já preparadas em JPEG) para classificação
 export async function createAnalysis(photos: Photo[]) {
   const formData = new FormData();
 
@@ -74,12 +43,12 @@ export async function createAnalysis(photos: Photo[]) {
     }
   }
 
-  // Dados de cada foto, na mesma ordem dos arquivos
-  const metadados = photos.map((photo) => ({
-    capturadaEm: photo.capturadaEm,
+  // Dados de cada foto, na mesma ordem dos arquivos (nomes do contrato da API)
+  const metadata = photos.map((photo) => ({
+    capturada_em: photo.capturadaEm,
     localizacao: photo.localizacao,
   }));
-  formData.append("metadados", JSON.stringify(metadados));
+  formData.append("metadata", JSON.stringify(metadata));
 
   // O api.ts usa application/json por padrão; aqui precisa ser multipart
   const response = await api.post<ApiResponse<CreatedAnalysis>>(
@@ -93,11 +62,19 @@ export async function createAnalysis(photos: Photo[]) {
   return response.data;
 }
 
-// Lista as análises de um período (from e to em ISO 8601)
-export async function getAnalyses(from: string, to: string, page = 1) {
-  const response = await api.get<ApiResponse<AnalysisListItem[]>>("/analysis", {
-    params: { page, from, to },
-  });
+// Lista as análises de um período (from e to em ISO 8601), da mais nova para a mais antiga
+export async function getAnalyses(
+  from: string,
+  to: string,
+  page = 1,
+  limit = MAX_LIMIT,
+) {
+  const response = await api.get<ApiResponse<Paginated<AnalysisListItem>>>(
+    "/analysis",
+    {
+      params: { page, limit, from, to },
+    },
+  );
   return response.data;
 }
 
@@ -108,46 +85,13 @@ export async function getAnalysisDetails(id: string) {
   return response.data;
 }
 
-// Monta a URL completa de uma imagem a partir do caminho que a API devolve
-export function getImageUrl(caminho: string) {
-  const base = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-  return `${base}/${caminho.replace(/^\/+/, "")}`;
-}
-
-// ---- Mapa (contrato comum: valores iguais aos da API TS) ----
-
-export type MapStatus = "em_espera" | "processando" | "finalizada" | "falhou";
-export type MapClasse = "saudavel" | "infectado";
-
-export interface AnalysisMapItem {
-  id: string;
-  status: MapStatus;
-  classe: MapClasse | null; // null enquanto não termina ou se falhou
-  confianca: number | null;
-  createdAt: string;
-  latitude: number;
-  longitude: number;
-  precisao: number;
-}
-
-export interface MapFilters {
-  from?: string;
-  to?: string;
-  status?: string; // ex.: "em_espera,processando"
-  classe?: MapClasse;
-}
-
-export interface MapResponse {
-  items: AnalysisMapItem[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
 // Pontos do mapa (filtros vazios são omitidos pelo axios)
 export async function getMapAnalyses(filters: MapFilters) {
-  const response = await api.get<ApiResponse<MapResponse>>("/analysis/map", {
-    params: filters,
-  });
+  const response = await api.get<ApiResponse<Paginated<AnalysisMapItem>>>(
+    "/analysis/map",
+    {
+      params: filters,
+    },
+  );
   return response.data;
 }

@@ -9,13 +9,22 @@ import {
 } from "react-native";
 import { useAuth } from "@/src/hooks/useAuth";
 import { InfoRow } from "@/src/components/InfoRow";
-import { getProfile, UserProfile } from "@/src/services/userService";
+import { getProfile } from "@/src/services/userService";
+import type { Perfil, UserProfile } from "@/src/types/api";
+import { getErrorMessage } from "@/src/utils/apiError";
 import {
   formatCNPJ,
   formatPhone,
   fromISODate,
 } from "@/src/validation/authSchemas";
 import { styles } from "@/src/styles/perfil.styles";
+
+// Rótulo do perfil ("outro" vem, por exemplo, de contas antigas criadas pelo Web)
+const PROFILE_LABELS: Record<UserProfile, string> = {
+  produtor: "Produtor",
+  estudante: "Estudante",
+  outro: "Outro",
+};
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -26,7 +35,7 @@ function getInitials(name: string) {
 
 export default function PerfilScreen() {
   const { signOut } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<Perfil | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,11 +44,8 @@ export default function PerfilScreen() {
       try {
         const response = await getProfile();
         setProfile(response.data);
-      } catch (err: any) {
-        setError(
-          err?.response?.data?.message ||
-            "Não foi possível carregar seus dados.",
-        );
+      } catch (err) {
+        setError(getErrorMessage(err, "Não foi possível carregar seus dados."));
       } finally {
         setLoading(false);
       }
@@ -68,7 +74,7 @@ export default function PerfilScreen() {
     );
   }
 
-  const isProdutor = profile.tipo_acesso === "produtor";
+  const isProdutor = profile.perfil === "produtor";
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -78,9 +84,7 @@ export default function PerfilScreen() {
         </View>
         <Text style={styles.name}>{profile.nome}</Text>
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>
-            {isProdutor ? "Produtor" : "Estudante"}
-          </Text>
+          <Text style={styles.badgeText}>{PROFILE_LABELS[profile.perfil]}</Text>
         </View>
       </View>
 
@@ -124,13 +128,17 @@ export default function PerfilScreen() {
                 label="Faculdade"
                 value={profile.faculdade}
               />
-              <InfoRow icon="book-outline" label="Curso" value={profile.curso} />
+              <InfoRow
+                icon="book-outline"
+                label="Curso"
+                value={profile.curso}
+              />
             </>
           )}
           <InfoRow
             icon="time-outline"
             label="Membro desde"
-            value={fromISODate(profile.createdAt)}
+            value={fromISODate(profile.criado_em)}
           />
         </View>
 

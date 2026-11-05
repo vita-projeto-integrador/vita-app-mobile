@@ -11,7 +11,7 @@ import { AnalysisRow } from "@/src/components/AnalysisRow";
 import { DayPicker } from "@/src/components/DayPicker";
 import { ScreenHeader } from "@/src/components/ScreenHeader";
 import { getAnalyses } from "@/src/services/analysisService";
-import type { AnalysisListItem } from "@/src/services/analysisService";
+import type { AnalysisListItem } from "@/src/types/api";
 import { styles } from "@/src/styles/historico.styles";
 import {
   FAILED_NOTICE,
@@ -19,6 +19,7 @@ import {
   isInProgress,
 } from "@/src/utils/analysis";
 import { showAlert } from "@/src/utils/alert";
+import { getErrorMessage } from "@/src/utils/apiError";
 import { getDayRange } from "@/src/utils/date";
 
 type Tab = "finalizadas" | "andamento";
@@ -44,11 +45,12 @@ export default function HistoricoScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Só as análises do dia escolhido, da mais nova para a mais antiga
+  // (a API já filtra e ordena; o filtro local protege contra respostas atrasadas de outro dia)
   const dayAnalyses = analyses
-    .filter((item) => isSameDay(new Date(item.createdAt), selectedDate))
+    .filter((item) => isSameDay(new Date(item.criado_em), selectedDate))
     .sort(
       (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime(),
     );
   const inProgressCount = dayAnalyses.filter((item) =>
     isInProgress(item.status),
@@ -63,15 +65,15 @@ export default function HistoricoScreen() {
   const loadAnalyses = useCallback(
     async (silent = false) => {
       try {
+        // um dia cabe numa página de 100 (limite máximo da API)
         const { from, to } = getDayRange(selectedDate);
         const response = await getAnalyses(from, to);
-        setAnalyses(Array.isArray(response.data) ? response.data : []);
-      } catch (error: any) {
+        setAnalyses(response.data.items);
+      } catch (error) {
         if (!silent) {
           showAlert(
             "Erro",
-            error?.response?.data?.message ||
-              "Não foi possível carregar as análises.",
+            getErrorMessage(error, "Não foi possível carregar as análises."),
           );
         }
       } finally {
@@ -114,7 +116,7 @@ export default function HistoricoScreen() {
       return;
     }
     const notice =
-      item.status === "cancelada" ? FAILED_NOTICE : IN_PROGRESS_NOTICE;
+      item.status === "falhou" ? FAILED_NOTICE : IN_PROGRESS_NOTICE;
     showAlert(notice.title, notice.message);
   }
 
