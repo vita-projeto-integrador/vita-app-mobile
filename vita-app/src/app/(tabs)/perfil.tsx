@@ -1,23 +1,28 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { useAuth } from "@/src/hooks/useAuth";
 import { InfoRow } from "@/src/components/InfoRow";
-import { getProfile } from "@/src/services/userService";
+import { useAuth } from "@/src/hooks/useAuth";
+import { getProfile, updateProfilePhoto } from "@/src/services/userService";
+import { styles } from "@/src/styles/perfil.styles";
 import type { Perfil, UserProfile } from "@/src/types/api";
+import { showAlert } from "@/src/utils/alert";
 import { getErrorMessage } from "@/src/utils/apiError";
+import { prepareImage } from "@/src/utils/image";
 import {
   formatCNPJ,
   formatPhone,
   fromISODate,
 } from "@/src/validation/authSchemas";
-import { styles } from "@/src/styles/perfil.styles";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 // Rótulo do perfil ("outro" vem, por exemplo, de contas antigas criadas pelo Web)
 const PROFILE_LABELS: Record<UserProfile, string> = {
@@ -25,6 +30,9 @@ const PROFILE_LABELS: Record<UserProfile, string> = {
   estudante: "Estudante",
   outro: "Outro",
 };
+
+// Foto de perfil aparece pequena: 512 px já sobra
+const PROFILE_PHOTO_WIDTH = 512;
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -39,6 +47,8 @@ export default function PerfilScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -52,6 +62,35 @@ export default function PerfilScreen() {
     }
     loadProfile();
   }, []);
+
+    async function handleChangePhoto() {
+    if (uploadingPhoto) return;
+    try {
+      // Seletor de fotos do sistema: não pede permissão de galeria
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true, // recorte quadrado antes de confirmar
+        aspect: [1, 1],
+      });
+      if (result.canceled) return;
+
+      setUploadingPhoto(true);
+      const uri = await prepareImage(result.assets[0].uri, PROFILE_PHOTO_WIDTH);
+      const response = await updateProfilePhoto(uri);
+
+      // A API devolve a URL assinada da foto nova: troca só esse campo
+      setProfile((prev) =>
+        prev ? { ...prev, foto_perfil: response.data.foto_perfil } : prev,
+      );
+    } catch (err) {
+      showAlert(
+        "Erro",
+        getErrorMessage(err, "Não foi possível atualizar a foto de perfil."),
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
 
   async function handleSignOut() {
     await signOut();
@@ -79,9 +118,34 @@ export default function PerfilScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{getInitials(profile.nome)}</Text>
-        </View>
+                <TouchableOpacity
+          style={styles.avatarButton}
+          onPress={handleChangePhoto}
+          disabled={uploadingPhoto}
+          activeOpacity={0.8}
+          accessibilityLabel="Alterar foto de perfil"
+        >
+          <View style={styles.avatar}>
+            {profile.foto_perfil ? (
+              <Image
+                source={{ uri: profile.foto_perfil }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{getInitials(profile.nome)}</Text>
+            )}
+
+            {uploadingPhoto && (
+              <View style={styles.avatarLoading}>
+                <ActivityIndicator color="#FFFFFF" />
+              </View>
+            )}
+          </View>
+
+          <View style={styles.avatarEdit}>
+            <Ionicons name="camera" size={14} color="#FFFFFF" />
+          </View>
+        </TouchableOpacity>
         <Text style={styles.name}>{profile.nome}</Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{PROFILE_LABELS[profile.perfil]}</Text>

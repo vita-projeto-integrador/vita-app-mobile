@@ -66,6 +66,11 @@ export interface Perfil extends Usuario {
   alterado_em: string;
 }
 
+// PUT /user/me/photo
+export interface ProfilePhoto {
+  foto_perfil: string; // URL assinada da foto nova
+}
+
 // ---- Análises ----
 
 export interface Localizacao {

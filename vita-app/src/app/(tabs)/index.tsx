@@ -1,4 +1,20 @@
+import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
+import { RecentAnalyses } from "@/src/components/RecentAnalyses";
+import { useAuth } from "@/src/hooks/useAuth";
+import {
+  getAnalyses,
+  getRecentAnalyses,
+} from "@/src/services/analysisService";
+import { styles } from "@/src/styles/home.styles";
+import type { AnalysisListItem } from "@/src/types/api";
+import { showAlert } from "@/src/utils/alert";
+import {
+  FAILED_NOTICE,
+  IN_PROGRESS_NOTICE,
+  isBlackSpot,
+} from "@/src/utils/analysis";
 import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   Image,
@@ -9,13 +25,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useAuth } from "@/src/hooks/useAuth";
-import { router, useFocusEffect, useNavigation } from "expo-router";
-import { AnimatedIconButton } from "@/src/components/AnimatedIconButton";
-import { getAnalyses } from "@/src/services/analysisService";
-import { showAlert } from "@/src/utils/alert";
-import { isBlackSpot } from "@/src/utils/analysis";
-import { styles } from "@/src/styles/home.styles";
+
 
 const tarefasPendentes = [
   { id: "1", texto: "Aplicar defensivo agrícola", cor: "#E53935" },
@@ -23,6 +33,8 @@ const tarefasPendentes = [
   { id: "3", texto: "Fazer análise por imagem", cor: "#1E7E34" },
   { id: "4", texto: "Fazer análise por imagem", cor: "#1E7E34" },
 ];
+
+const RECENT_LIMIT = 6; // cartões na seção "Últimas análises"
 
 function showComingSoon(feature: string) {
   showAlert("Em breve", `${feature} ainda está em desenvolvimento.`);
@@ -54,6 +66,9 @@ export default function HomeScreen() {
   const [blackSpotsThisMonth, setBlackSpotsThisMonth] = useState<number | null>(
     null,
   );
+  // null = ainda carregando (mostra cartões cinza)
+  const [recent, setRecent] = useState<AnalysisListItem[] | null>(null);
+  const [recentError, setRecentError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadStats = useCallback(async () => {
@@ -80,25 +95,53 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const loadRecent = useCallback(async () => {
+    try {
+      const response = await getRecentAnalyses(RECENT_LIMIT);
+      setRecent(response.data.items);
+      setRecentError(false);
+    } catch {
+      // Mantém os cartões que já estavam na tela; sem nenhum, mostra o aviso
+      setRecentError(true);
+    }
+  }, []);
+
+  // As duas buscas são independentes: uma falhar não impede a outra
+  const loadHome = useCallback(async () => {
+    await Promise.all([loadStats(), loadRecent()]);
+  }, [loadStats, loadRecent]);
+
   // Recarrega sempre que a home volta a ficar em foco
+  // (também renova as URLs assinadas das fotos)
   useFocusEffect(
     useCallback(() => {
-      loadStats();
-    }, [loadStats]),
+      loadHome();
+    }, [loadHome]),
   );
 
   // Tocar na aba Home quando já está nela também atualiza
   useEffect(() => {
     const unsubscribe = (navigation as any).addListener("tabPress", () => {
-      loadStats();
+      loadHome();
     });
     return unsubscribe;
-  }, [navigation, loadStats]);
+  }, [navigation, loadHome]);
 
   async function handleRefresh() {
     setRefreshing(true);
-    await loadStats();
+    await loadHome();
     setRefreshing(false);
+  }
+
+  // Mesmo comportamento do histórico: só a finalizada abre os detalhes
+  function handlePressRecent(item: AnalysisListItem) {
+    if (item.status === "finalizada") {
+      router.push(`/analise/${item.id}`);
+      return;
+    }
+    const notice =
+      item.status === "falhou" ? FAILED_NOTICE : IN_PROGRESS_NOTICE;
+    showAlert(notice.title, notice.message);
   }
 
   return (
@@ -176,6 +219,13 @@ export default function HomeScreen() {
         >
           Ver mais métricas
         </Text>
+
+        <RecentAnalyses
+          items={recent}
+          error={recentError}
+          onPressItem={handlePressRecent}
+          onSeeAll={() => router.navigate("/historico")}
+        />
 
         <Text style={styles.sectionTitle}>Tarefas pendentes</Text>
         {tarefasPendentes.map((tarefa) => (

@@ -1,5 +1,3 @@
-import api from "./api";
-import { Platform } from "react-native";
 import type {
   AnalysisDetails,
   AnalysisListItem,
@@ -10,6 +8,8 @@ import type {
   MapFilters,
   Paginated,
 } from "@/src/types/api";
+import { Platform } from "react-native";
+import api from "./api";
 
 // Máximo que a API aceita por página
 const MAX_LIMIT = 100;
@@ -75,6 +75,14 @@ export async function getAnalyses(
       params: { page, limit, from, to },
     },
   );
+  return response.data;
+}
+
+// Últimas análises, sem filtro de período (a API já ordena da mais nova para a mais antiga)
+export async function getRecentAnalyses(limit: number) {
+  const response = await api.get<ApiResponse<Paginated<AnalysisListItem>>>("/analysis", {
+    params: { page: 1, limit },
+  });
   return response.data;
 }
 

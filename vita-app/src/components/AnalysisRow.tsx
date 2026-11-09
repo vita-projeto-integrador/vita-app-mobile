@@ -1,36 +1,8 @@
+import type { AnalysisListItem } from "@/src/types/api";
+import { BADGE_COLORS, getAnalysisBadge } from "@/src/utils/analysis";
+import { formatTime } from "@/src/utils/date";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import type { AnalysisListItem } from "@/src/types/api";
-import {
-  STATUS_LABELS,
-  getBadgeLabel,
-  isBlackSpot,
-  isInProgress,
-} from "@/src/utils/analysis";
-import { formatTime } from "@/src/utils/date";
-
-type BadgeVariant = "red" | "green" | "gray" | "amber";
-
-// Decide o texto e a cor do badge de resultado
-function getBadge(item: AnalysisListItem): {
-  label: string;
-  variant: BadgeVariant;
-} {
-  if (item.status === "falhou") {
-    return { label: STATUS_LABELS.falhou, variant: "gray" };
-  }
-  if (isInProgress(item.status)) {
-    return { label: STATUS_LABELS[item.status], variant: "amber" };
-  }
-  if (item.classificacao) {
-    const { classe } = item.classificacao;
-    return {
-      label: getBadgeLabel(classe),
-      variant: isBlackSpot(classe) ? "red" : "green",
-    };
-  }
-  return { label: STATUS_LABELS[item.status], variant: "gray" };
-}
 
 interface AnalysisRowProps {
   item: AnalysisListItem;
@@ -38,7 +10,7 @@ interface AnalysisRowProps {
 }
 
 export function AnalysisRow({ item, onPress }: AnalysisRowProps) {
-  const badge = getBadge(item);
+  const badge = getAnalysisBadge(item);
 
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
@@ -53,9 +25,9 @@ export function AnalysisRow({ item, onPress }: AnalysisRowProps) {
         <Text style={styles.timeText}>{formatTime(item.criado_em)}</Text>
       </View>
 
-      <View style={styles.resultColumn}>
-        <View style={[styles.badge, badgeStyles[badge.variant].container]}>
-          <Text style={[styles.badgeText, badgeStyles[badge.variant].text]}>
+            <View style={styles.resultColumn}>
+        <View style={[styles.badge, BADGE_COLORS[badge.variant].container]}>
+          <Text style={[styles.badgeText, BADGE_COLORS[badge.variant].text]}>
             {badge.label}
           </Text>
         </View>
@@ -133,23 +105,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-
-// Cores de cada tipo de badge
-const badgeStyles = {
-  red: {
-    container: { backgroundColor: "#FEE2E2" },
-    text: { color: "#DC2626" },
-  },
-  green: {
-    container: { backgroundColor: "#DCFCE7" },
-    text: { color: "#16A34A" },
-  },
-  gray: {
-    container: { backgroundColor: "#E2E8F0" },
-    text: { color: "#475569" },
-  },
-  amber: {
-    container: { backgroundColor: "#FEF3C7" },
-    text: { color: "#B45309" },
-  },
-};

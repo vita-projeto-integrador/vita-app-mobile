@@ -1,4 +1,8 @@
-import type { AnalysisStatus, ClassificationClass } from "@/src/types/api";
+import type {
+  AnalysisListItem,
+  AnalysisStatus,
+  ClassificationClass,
+} from "@/src/types/api";
 
 // Status que aparecem na aba "Em andamento"
 export const IN_PROGRESS: AnalysisStatus[] = ["em_espera", "processando"];
@@ -29,6 +33,54 @@ export function getBadgeLabel(classe: ClassificationClass) {
 export function getResultLabel(classe: ClassificationClass) {
   return isBlackSpot(classe) ? "Pinta preta detectada" : "Saudável";
 }
+
+// ---- Badge de status/resultado (lista do histórico e home) ----
+
+export type BadgeVariant = "red" | "green" | "gray" | "amber";
+
+// Decide o texto e a cor do badge de uma análise da lista
+export function getAnalysisBadge(item: AnalysisListItem): {
+  label: string;
+  variant: BadgeVariant;
+} {
+  if (item.status === "falhou") {
+    return { label: STATUS_LABELS.falhou, variant: "gray" };
+  }
+  if (isInProgress(item.status)) {
+    return { label: STATUS_LABELS[item.status], variant: "amber" };
+  }
+  if (item.classificacao) {
+    const { classe } = item.classificacao;
+    return {
+      label: getBadgeLabel(classe),
+      variant: isBlackSpot(classe) ? "red" : "green",
+    };
+  }
+  return { label: STATUS_LABELS[item.status], variant: "gray" };
+}
+
+// Cores de cada tipo de badge
+export const BADGE_COLORS: Record<
+  BadgeVariant,
+  { container: { backgroundColor: string }; text: { color: string } }
+> = {
+  red: {
+    container: { backgroundColor: "#FEE2E2" },
+    text: { color: "#DC2626" },
+  },
+  green: {
+    container: { backgroundColor: "#DCFCE7" },
+    text: { color: "#16A34A" },
+  },
+  gray: {
+    container: { backgroundColor: "#E2E8F0" },
+    text: { color: "#475569" },
+  },
+  amber: {
+    container: { backgroundColor: "#FEF3C7" },
+    text: { color: "#B45309" },
+  },
+};
 
 // Avisos ao tocar numa análise que não está finalizada
 export const IN_PROGRESS_NOTICE = {
